@@ -5,7 +5,7 @@ services:
   billing-app:
     build: .                          # Build image using ./Dockerfile
     ports:
-      - "5001:5000"
+      - "8083:5000"
     environment:
       - FLASK_ENV=development
       - DB_HOST=billing-db
