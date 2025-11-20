@@ -1,1 +1,48 @@
+version: '3.8'
 
+services:
+  # BILLING APPLICATION SERVICE
+  billing-app:
+    build: .                          # Build image using ./Dockerfile
+    ports:
+      - "5001:5000"
+    environment:
+      - FLASK_ENV=development
+      - DB_HOST=billing-db
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=billdb
+      - WEIGHT_SERVICE_URL=http://weight:5000
+    depends_on:
+      billing-db:
+        condition: service_healthy
+    volumes:
+      - ./in:/app/in
+    networks:
+      - billing-network
+
+  # DATABASE SERVICE
+  billing-db:
+    build: ./db                        # Build image using ./db/Dockerfile
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=billdb
+    volumes:
+      - billing-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - billing-network
+
+volumes:
+  billing-db-data:
+
+networks:
+  billing-network:
+    driver: bridge
