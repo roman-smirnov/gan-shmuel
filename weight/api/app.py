@@ -24,18 +24,18 @@ class Transactions(db.Model):
     direction = db.Column(db.String(10))  # in / out / out
     truck = db.Column(db.String(50))
     containers = db.Column(db.String(10000))
-    bruto = db.Column(db.Integer(12))
-    truck_Tara_ = db.Column(db.Integer(12))
-    neto = db.Column(db.Integer(12))
+    bruto = db.Column(db.Integer)
+    truck_Tara_ = db.Column(db.Integer)
+    neto = db.Column(db.Integer)
     produce = db.Column(db.String(50))
-    sesstion_id = db.Column(db.Integer(12))
+    sesstion_id = db.Column(db.Integer)
 
 
 class Containers_registerd(db.Model):
     __tablename__ = "containers_registerd"
 
     container_id = db.Column(db.String(15), primary_key=True)
-    weight = db.Column(db.Integer(12))
+    weight = db.Column(db.Integer)
     unit = db.Column(db.String(10))
 
 
