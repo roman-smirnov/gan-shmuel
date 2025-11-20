@@ -9,11 +9,14 @@ import os
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)#generate a random 16 characters in hexadecimal for secret key
 
-
 # Configure the database connection
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+'''
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-    "DATABASE_URL", "mysql+pymysql://root@localhost:3306/gan_shmuel"
+      "DATABASE_URL", f"mysql+pymysql://root:root_password@db:3306/weight"
+    # "DATABASE_URL", "mysql+pymysql://root@localhost:3306/gan_shmuel"
 )
+'''
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
