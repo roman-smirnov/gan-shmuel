@@ -1,1 +1,11 @@
 
+version: "3.9"
+
+services:
+  api:
+    build: ./api
+    container_name: devops-api
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=development
