@@ -8,7 +8,6 @@ import os
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)  # generate a random 16 characters in hexadecimal for secret key
 
-
 # Configure the database connection
 db_user = os.getenv("MYSQL_USER")
 db_pass = os.getenv("MYSQL_PASSWORD")
@@ -46,25 +45,21 @@ class Containers_registerd(db.Model):
 
 # helpter functions for db queries
 
-
+# convert string to datetime
 def str_to_datetime(ts):
     return datetime.strptime(ts, "%Y%m%d%H%M%S")
 
 
 def get_query_transactions(from_date, to_date, direction_filter):
     query = Transactions.query
-
     if from_date:
         from_datetime = str_to_datetime(from_date)
         query = query.filter(Transactions.datetime >= from_datetime)
-
     if to_date:
         to_datetime = str_to_datetime(to_date)
         query = query.filter(Transactions.datetime <= to_datetime)
-
     if direction_filter in ["in", "out"]:
         query = query.filter(Transactions.direction == direction_filter)
-
     return query.all()
 
 
@@ -94,7 +89,6 @@ def get_weight():
                 "containers": transaction.containers,
             }
         )
-
     return {"results": results}
 
 
