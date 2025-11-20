@@ -4,8 +4,8 @@ app = flask.Flask(__name__)
 
 @app.route("/heaith", methods=["GET"])
 def heaith();
-    return "OK"
-    
+    return Response('Okay', 200)
+
 
 
 
