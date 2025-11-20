@@ -1,12 +1,13 @@
 from datetime import datetime, timezone
 from flask import Flask, Response, request, session
 from flask_sqlalchemy import SQLAlchemy
+import secrets
 #from datetime import datetime
 import os
 
 # Initialize Flask app and SQLAlchemy
 app = Flask(__name__)
-app.secret_key = "68d6c73c06b73109b973c881"
+app.secret_key = secrets.token_hex(16)#generate a random 16 characters in hexadecimal for secret key
 
 
 # Configure the database connection
