@@ -5,8 +5,8 @@ from flask import Response
 app = flask.Flask(__name__)
 
 @app.route("/health", methods=["GET"])
-def health();
-    return Response('Okay', 200)
+def health():
+    return Response('Service is running', status=200)
 
 
 
