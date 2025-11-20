@@ -1,10 +1,13 @@
 from datetime import datetime, timezone
-from flask import Flask, Response
+from flask import Flask, Response, request, session
 from flask_sqlalchemy import SQLAlchemy
+import secrets
+#from datetime import datetime
 import os
 
 # Initialize Flask app and SQLAlchemy
 app = Flask(__name__)
+app.secret_key = secrets.token_hex(16)#generate a random 16 characters in hexadecimal for secret key
 
 
 # Configure the database connection
@@ -50,6 +53,32 @@ def health():
 @app.route("/weight", methods=["GET"])
 def get_weight():
     return "Weight data"
+
+@app.route( "/weight", methods = ["POST"])
+def post_weight():
+    direction = request.form["direction"]
+    truck = request.form["licence"]
+    weight = request.form["weight"]
+    containers = request.form["containers"]
+    unit = request.form["unit"]
+    force = request.form["force"]
+    produce = request.form["produce"]
+    # timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    handle_session(direction, truck) #handle the sessions
+
+    #todo add everything into db
+
+
+def handle_session(direction, truck):
+    if direction == "in" or direction == "none":
+        # generate session
+        session["truck_id"] = truck
+
+    elif direction == "out":
+        session.pop("truck_id", None)
+
+
 
 
 if __name__ == "__main__":
