@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # BILLING APPLICATION SERVICE
   billing-app:
-    build: .                          # Build image using ./Dockerfile
+    build: ./app                          # Build image using ./Dockerfile
     ports:
       - "8083:5000"
     environment:
