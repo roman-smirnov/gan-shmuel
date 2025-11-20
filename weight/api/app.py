@@ -7,11 +7,6 @@ import os
 app = Flask(__name__)
 
 
-@app.route("/health", methods=["GET"])
-def health():
-    return Response("Service is running", status=200)
-
-
 # Configure the database connection
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL", "mysql+pymysql://root@localhost:3306/gan_shmuel"
@@ -20,18 +15,36 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
+# Define database models
+class Transactions(db.Model):
+    __tablename__ = "Transactions"
 
-class Weighing(db.Model):
-    __tablename__ = "weighings"
-
-    id = db.Column(db.String(50), primary_key=True)  
-    direction = db.Column(db.String(10))  # in, out, none - 
-    truck = db.Column(db.String(20))  # truck license plate 
-    bruto_kg = db.Column(db.Integer)
-    neto_kg = db.Column(db.Integer)
+    id = db.Column(db.Integer, primary_key=True)
+    datetime = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    direction = db.Column(db.String(10))  # in / out / out
+    truck = db.Column(db.String(50))
+    containers = db.Column(db.String(10000))
+    bruto = db.Column(db.Integer(12))
+    truck_Tara_ = db.Column(db.Integer(12))
+    neto = db.Column(db.Integer(12))
     produce = db.Column(db.String(50))
-    containers = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    sesstion_id = db.Column(db.Integer(12))
+
+
+class Containers_registerd(db.Model):
+    __tablename__ = "containers_registerd"
+
+    container_id = db.Column(db.String(15), primary_key=True)
+    weight = db.Column(db.Integer(12))
+    unit = db.Column(db.String(10))
+
+
+# endpoint definitions
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    return Response("Service is running", status=200)
 
 
 @app.route("/weight", methods=["GET"])
