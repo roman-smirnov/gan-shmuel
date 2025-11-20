@@ -1,9 +1,11 @@
 import flask 
+from flask import Response
+
 
 app = flask.Flask(__name__)
 
-@app.route("/heaith", methods=["GET"])
-def heaith();
+@app.route("/health", methods=["GET"])
+def health();
     return Response('Okay', 200)
 
 
