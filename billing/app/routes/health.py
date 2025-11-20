@@ -6,8 +6,8 @@ import os
 health_bp = Blueprint("health", __name__)
 
 # Load environment variables (with defaults)
-MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")   # default
-MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))   # default
+MYSQL_HOST = os.getenv("DB_HOST", "localhost")
+MYSQL_PORT = int(os.getenv("DB_PORT", "3306"))
 
 
 def check_mysql_alive() -> bool:
