@@ -2,16 +2,20 @@ from app.utils import get_db_connection
 
 def create_provider(name):
 
+    # Open connection
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # Execute SQL query
     cursor.execute(
         "INSERT INTO Provider (name) VALUES (%s)",
         (name,)
     )
     provider_id = cursor.lastrowid
     
+    # Update changes
     conn.commit()
+    # Close connection
     cursor.close()
     conn.close()
     
@@ -19,16 +23,7 @@ def create_provider(name):
 
 
 def update_provider(provider_id, name):
-    """
-    Update an existing provider's name.
-    
-    Args:
-        provider_id: Provider's ID
-        name: New name
-    
-    Returns:
-        bool: True if a row was updated, False otherwise
-    """
+
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -46,15 +41,6 @@ def update_provider(provider_id, name):
 
 
 def get_provider(provider_id):
-    """
-    Fetch a provider by ID.
-    
-    Args:
-        provider_id: Provider's ID
-    
-    Returns:
-        dict: Provider data {'id': ..., 'name': ...} or None if not found
-    """
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
@@ -71,12 +57,6 @@ def get_provider(provider_id):
 
 
 def get_all_providers():
-    """
-    Fetch all providers.
-    
-    Returns:
-        list: List of provider dicts
-    """
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
