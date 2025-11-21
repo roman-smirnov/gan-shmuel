@@ -41,12 +41,34 @@ def update_provider(provider_id, name):
 
 
 def get_provider(provider_id):
+    """
+    Fetch a provider by id.
+    """
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
     cursor.execute(
         "SELECT * FROM Provider WHERE id = %s",
         (provider_id,)
+    )
+    provider = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
+    
+    return provider
+
+
+def get_provider_by_name(name):
+    """
+    Fetch a provider by name (for uniqueness check).
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute(
+        "SELECT * FROM Provider WHERE name = %s",
+        (name,)
     )
     provider = cursor.fetchone()
     
