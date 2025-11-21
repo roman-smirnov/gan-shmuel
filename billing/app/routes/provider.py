@@ -1,5 +1,5 @@
 from flask import request, jsonify             
-from app.models.provider import create_provider, get_provider_by_name     
+from app.models.provider import create_provider, get_provider, get_provider_by_name, update_provider     
 from flask import Blueprint  
 
 providers_bp = Blueprint("providers", __name__) 
@@ -32,3 +32,41 @@ def add_new_provider():
 
     # Return only the generated provider ID as required — HTTP 201 = Created
     return jsonify({"id": str(provider_id)}), 201
+
+
+@providers_bp.route('/provider/<int:provider_id>', methods=['PUT']) 
+def put_provider(provider_id):
+    """
+    Update an existing provider's name.
+    """
+    payload = request.get_json()
+    
+    # Check if user added a name
+    if not payload or 'name' not in payload:
+        return jsonify({'error': 'Name is required'}), 400
+    
+    # Extract input
+    name = payload['name']
+    
+    # Validate input
+    if not name or not name.strip():
+        return jsonify({'error': 'Name cannot be empty'}), 400
+    
+    # Check if provider exists
+    existing = get_provider(provider_id)
+    if not existing:
+        return jsonify({'error': 'Provider not found'}), 404
+    
+    # Check if new name is already used by another provider
+    name_stripped = name.strip()
+    existing_with_name = get_provider_by_name(name_stripped)
+    if existing_with_name and existing_with_name['id'] != provider_id:
+        return jsonify({'error': 'Provider with this name already exists'}), 409
+
+    # Check if updating provider name worked
+    success = update_provider(provider_id, name_stripped)
+    
+    if success:
+        return jsonify({'id': provider_id, 'name': name_stripped}), 200
+    else:
+        return jsonify({'error': 'Failed to update provider'}), 500
