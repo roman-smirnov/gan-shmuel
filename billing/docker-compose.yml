@@ -12,6 +12,7 @@ services:
       - DB_USER=root
       - DB_PASSWORD=password
       - DB_NAME=billdb
+      - DB_PORT=3306
       - WEIGHT_SERVICE_URL=http://weight:5000
     depends_on:
       billing-db:
