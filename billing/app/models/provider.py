@@ -77,7 +77,7 @@ def get_provider_by_name(name):
     
     return provider
 
-
+# TODO: not implemented yet
 def get_all_providers():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
