@@ -24,7 +24,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "5001:5000"
+      - "8082:5000"
     command: python app.py
 
 
