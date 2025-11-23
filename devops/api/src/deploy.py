@@ -153,4 +153,4 @@ def deploy():
         check=True
     )
 
-    print("✔ Deployment completed successfully")
+    print("Deployment completed successfully")
