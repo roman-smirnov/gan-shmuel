@@ -3,6 +3,9 @@ from flask import Flask, Response, request, session
 from flask_sqlalchemy import SQLAlchemy
 import secrets
 import os
+import json
+
+
 
 # Initialize Flask app and SQLAlchemy
 app = Flask(__name__)
@@ -12,7 +15,7 @@ app.secret_key = secrets.token_hex(6)  # generate a random 12 characters in hexa
 db_user = os.getenv("MYSQL_USER")
 db_pass = os.getenv("MYSQL_PASSWORD")
 db_name = os.getenv("MYSQL_DATABASE")
-app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{db_user}:{db_pass}@db:3306/{db_name}"
+app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{db_user}:{db_pass}@weight_db:3306/{db_name}"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
@@ -215,6 +218,10 @@ def get_item(item_id):
     raw_from = request.args.get("from")
     raw_to = request.args.get("to")
 
+    # return 404 if item isnt availble 
+    if len(get_query_transactions(None,None,None,item_id)) == 0 :
+        return Response("Item not found", status=404)
+    
     # handle date range
     if not raw_from:
         from_date = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -236,24 +243,65 @@ def get_item(item_id):
                 "session_id": transaction.session_id,
             }
         )
-    if len(results) == 0:
-        return ("Item not found", 404)
     return results
 
+@app.route("/batch-weight", methods=["POST"])
+def batch_weight():
+    filename = request.args.get("file")
+    extension = filename.split(".")[-1]
+    match extension:
+        case "csv":
+            with open(f"in/{filename}", "r") as f:
+                lines = f.readlines()
+                header = lines[0].strip().split(",")
+                unit = header[1]
+                for line in lines[1:]:
+                    cid, weight = line.strip().split(",")
+                    db.session.add(Containers_registered(container_id=cid, weight=weight, unit=unit))
+                    
+            db.session.commit()
+            return Response("Batch processed successfully", status=200)
+        case "json":
+            with open(f"in/{filename}", "r") as f:
+                data = json.load(f)
+            for entry in data:
+                cid = entry["id"]
+                weight = entry["weight"]
+                unit = entry["unit"]
+                db.session.add(Containers_registered(container_id=cid, weight=weight, unit=unit))
+            db.session.commit()
+            return Response("Batch processed successfully", status=200)
+        
+        case _:
+            return Response("Unsupported file format", status=400)
+        
 
-def handle_session(t,direction, truck):
+@app.route("/unknown", methods=["GET"])
+def unknown():
+    result = []
+    unknown_containers = (db.session.query(Containers_registered.container_id)
+                          .filter(Containers_registered.weight == "").all())
+    for container in unknown_containers:
+        result.append(container.container_id)
+    if not result:
+        return Response("No unknown containers found", status=204, mimetype="text/plain") 
+    return Response(", ".join(result) + ",", status=200, mimetype="text/plain"), 
+    
+
+
+def handle_session(new_row,direction, truck):
     if direction == "in" or direction == "none":
         # generate session
         rand_num = secrets.randbelow(2000000000)#creates a random number for the
         session[truck] = rand_num
-        t.session_id = rand_num
+        new_row.session_id = rand_num
 
     elif direction == "out":
         rows = get_query_transactions(truck_filter=truck)  # get the last transaction of the truck
         if rows:
             last_row = rows[-1]
             session_id = last_row.session_id
-            t.session_id = session_id
+            new_row.session_id = session_id
             session.pop(truck, None)
 
 
