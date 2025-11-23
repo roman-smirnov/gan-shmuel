@@ -1,0 +1,48 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.env/
+.venv/
+env/
+venv.bak/
+.env.bak/
+
+# VS Code settings
+.vscode/
+
+# macOS cruft
+.DS_Store
+
+# Python packaging / build
+build/
+dist/
+*.egg-info/
+
+# Test / coverage caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# MyPy / type checking
+.mypy_cache/
+
+# Logs
+*.log
+
+# Local environment / secrets files (if you add them later)
+*.env
+.env.local
+.env.development
+.env.production
+
+
+# weight test file 
+<<<<<<< HEAD
+weight/api/in
+=======
+weight/api/in
+>>>>>>> origin/weight
