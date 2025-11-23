@@ -3,16 +3,19 @@ from flask import Flask, Response, request, session
 from flask_sqlalchemy import SQLAlchemy
 import secrets
 import os
+import json
+
+
 
 # Initialize Flask app and SQLAlchemy
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)  # generate a random 16 characters in hexadecimal for secret key
+app.secret_key = secrets.token_hex(6)  # generate a random 12 characters in hexadecimal for secret key
 
 # Configure the database connection
 db_user = os.getenv("MYSQL_USER")
 db_pass = os.getenv("MYSQL_PASSWORD")
 db_name = os.getenv("MYSQL_DATABASE")
-app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{db_user}:{db_pass}@db:3306/{db_name}"
+app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{db_user}:{db_pass}@weight_db:3306/{db_name}"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
@@ -32,11 +35,13 @@ def calc_containers_weight(containers):
         id_list = [int(i) for i in containers.split(",")]  # creates a list of id from the containers
         results = (db.session.query(Containers_registered.weight, Containers_registered.unit).filter
                    (Containers_registered.container_id.in_(id_list)).all())  # get list of tuples with all container weight
+        if len(results) < len(id_list):
+            return None
         for value in results:  # loops on all list
             if value[1] == "kg":
-                total_weight = total_weight - value[0]
+                total_weight = total_weight + value[0]
             else:
-                total_weight = total_weight - convert_lbs_to_kg(value[0])
+                total_weight = total_weight + convert_lbs_to_kg(value[0])
         return total_weight
 
     except: #except will raise in case the container wasn't found  and return na
@@ -49,6 +54,7 @@ def calc_neto_fruit(bruto_weight,truck_tara, containers):
     container_weight = calc_containers_weight(containers)
     if container_weight:
         return bruto_weight - (int(truck_tara) + container_weight)
+
     else:
         return None
 
@@ -70,7 +76,7 @@ class Transactions(db.Model):
     truckTara = db.Column(db.Integer)
     neto = db.Column(db.Integer)
     produce = db.Column(db.String(50))
-    #sesstion_id = db.Column(db.Integer)
+    session_id = db.Column(db.Integer)
 
 
 class Containers_registered(db.Model):
@@ -88,18 +94,22 @@ class Containers_registered(db.Model):
 def str_to_datetime(ts):
     return datetime.strptime(ts, "%Y%m%d%H%M%S")
 
-
-def get_query_transactions(from_date, to_date, direction_filter, item_filter):
-    query = Transactions.query
-    if from_date:
-        query = query.filter(Transactions.datetime >= from_date)
-    if to_date:
-        query = query.filter(Transactions.datetime <= to_date)
-    if direction_filter in ["in", "out"]:
-        query = query.filter(Transactions.direction == direction_filter)
-    if item_filter:
-        query = query.filter(Transactions.produce == item_filter)
-    return query.all()
+def get_query_transactions(from_date=None, to_date=None, direction_filter=None, item_filter=None, truck_filter=None):
+    try:
+        query = Transactions.query
+        if from_date:
+            query = query.filter(Transactions.datetime >= from_date)
+        if to_date:
+            query = query.filter(Transactions.datetime <= to_date)
+        if direction_filter in ["in", "out"]:
+            query = query.filter(Transactions.direction == direction_filter)
+        if item_filter:
+            query = query.filter(Transactions.produce == item_filter)
+        if truck_filter:
+            query = query.filter(Transactions.truck == truck_filter)
+        return query.all()
+    except IndexError:
+        return None
 
 
 # endpoint definitions
@@ -162,41 +172,45 @@ def verbose(row):
 def post_weight():
 
     data = request.form.to_dict()
-    data["truckTara"] = "1000"
-    neto = calc_neto_fruit(int(data["weight"]), data["truckTara"], data["containers"])
-    last_row = Transactions.query.order_by(Transactions.id.desc()).first()
-    handle_session(data["direction"], data["truck"])  # handle the sessions
+    #last_row = Transactions.query.order_by(Transactions.id.desc()).first()
+    last_row = None
+    rows = get_query_transactions(truck_filter=data["truck"]) #get the last transaction of the truck
+    if rows:
+        last_row = rows[-1]
 
     new_row = Transactions()
     new_row.produce = data["produce"]
-    new_row.bruto = data["weight"]
+    new_row.bruto = int(data["weight"])
     new_row.direction = data["direction"]
-    new_row.neto = neto
-    new_row.truck = data["truck"]
+    new_row.neto = None
+    new_row.truck = int(data["truck"])
     new_row.containers = data["containers"]
-    new_row.truckTara = data["truckTara"]
-
-    print(last_row)
+    new_row.truckTara = None
+    handle_session(new_row, data["direction"], data["truck"])  # handle the sessions
     if last_row: #check if the last row exist
+
+        if last_row.direction == "in" and new_row.direction == "out":
+            containers_weight = calc_containers_weight(new_row.containers)
+            if containers_weight:
+                new_row.truckTara = new_row.bruto - calc_containers_weight(new_row.containers)
+                neto = calc_neto_fruit(int(last_row.bruto), new_row.truckTara, data["containers"])
+                new_row.neto = neto
+
         if (( last_row.direction == "in" and last_row.direction == new_row.direction )
             or (last_row.direction == "out" and last_row.direction == new_row.direction)):
 
-            if data["force"]:
-                return 0
+            if not data["force"]:
+                raise Exception(f"truck already {last_row.direction} use force True to update")
             elif data["force"] == "True":
                 update_row(last_row,new_row )
                 return verbose(last_row)
             else:
-                return 0
-
-
+                raise Exception(f"truck already {last_row.direction} use force True to update")
 
     db.session.add(new_row)
     db.session.commit()
     #
     return verbose(new_row)
-
-    # todo add everything into db
 
 
 @app.route("/item/<item_id>", methods=["GET"])
@@ -204,6 +218,10 @@ def get_item(item_id):
     raw_from = request.args.get("from")
     raw_to = request.args.get("to")
 
+    # return 404 if item isnt availble 
+    if len(get_query_transactions(None,None,None,item_id)) == 0 :
+        return Response("Item not found", status=404)
+    
     # handle date range
     if not raw_from:
         from_date = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -222,21 +240,69 @@ def get_item(item_id):
             {
                 "id": transaction.id,
                 "tara": transaction.truck_Tara_,
-                "session_id": transaction.sesstion_id,
+                "session_id": transaction.session_id,
             }
         )
-    if len(results) == 0:
-        return ("Item not found", 404)
     return results
 
+@app.route("/batch-weight", methods=["POST"])
+def batch_weight():
+    filename = request.args.get("file")
+    extension = filename.split(".")[-1]
+    match extension:
+        case "csv":
+            with open(f"in/{filename}", "r") as f:
+                lines = f.readlines()
+                header = lines[0].strip().split(",")
+                unit = header[1]
+                for line in lines[1:]:
+                    cid, weight = line.strip().split(",")
+                    db.session.add(Containers_registered(container_id=cid, weight=weight, unit=unit))
+                    
+            db.session.commit()
+            return Response("Batch processed successfully", status=200)
+        case "json":
+            with open(f"in/{filename}", "r") as f:
+                data = json.load(f)
+            for entry in data:
+                cid = entry["id"]
+                weight = entry["weight"]
+                unit = entry["unit"]
+                db.session.add(Containers_registered(container_id=cid, weight=weight, unit=unit))
+            db.session.commit()
+            return Response("Batch processed successfully", status=200)
+        
+        case _:
+            return Response("Unsupported file format", status=400)
+        
 
-def handle_session(direction, truck):
+@app.route("/unknown", methods=["GET"])
+def unknown():
+    result = []
+    unknown_containers = (db.session.query(Containers_registered.container_id)
+                          .filter(Containers_registered.weight == "").all())
+    for container in unknown_containers:
+        result.append(container.container_id)
+    if not result:
+        return Response("No unknown containers found", status=204, mimetype="text/plain") 
+    return Response(", ".join(result) + ",", status=200, mimetype="text/plain"), 
+    
+
+
+def handle_session(new_row,direction, truck):
     if direction == "in" or direction == "none":
         # generate session
-        session["truck_id"] = truck
+        rand_num = secrets.randbelow(2000000000)#creates a random number for the
+        session[truck] = rand_num
+        new_row.session_id = rand_num
 
     elif direction == "out":
-        session.pop("truck_id", None)
+        rows = get_query_transactions(truck_filter=truck)  # get the last transaction of the truck
+        if rows:
+            last_row = rows[-1]
+            session_id = last_row.session_id
+            new_row.session_id = session_id
+            session.pop(truck, None)
 
 
 if __name__ == "__main__":
