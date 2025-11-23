@@ -2,6 +2,19 @@ import os
 import yaml
 import subprocess
 
+def clean_deploy():
+    BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+    BILLING_COMPOSE = os.path.join(BASE, "billing/docker-compose.yml")
+    WEIGHT_COMPOSE  = os.path.join(BASE, "weight/docker-compose.yml")
+    subprocess.run([
+        "docker", "compose",
+        "-f", BILLING_COMPOSE,
+        "-f", WEIGHT_COMPOSE,
+        "up", "-d"
+    ], check=True)
+
+
+
 
 def update_compose_with_shared_network(
     compose_path,
