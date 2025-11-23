@@ -13,7 +13,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
       - DB_PORT=${DB_PORT}
-      - PROD=${PROD:false}
+      - PROD=${PROD}
       - WEIGHT_BASE_URL=${WEIGHT_BASE_URL}
     depends_on:
       billing-db:
