@@ -1,1 +1,33 @@
 
+
+services:
+  db:
+    image: mysql:9.0.1
+    env_file:
+      - .env
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db/weight_db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      timeout: 20s
+      retries: 10
+
+
+  app:
+    build: ./api
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8082:5000"
+    command: python app.py
+
+
+
+volumes:
+  db-data:
