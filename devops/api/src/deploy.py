@@ -118,7 +118,7 @@ def deploy():
 
     BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
     BILLING_COMPOSE = os.path.join(BASE, "billing/docker-compose.yml")
-    #WEIGHT_COMPOSE  = os.path.join(BASE, "weight/docker-compose.yml")
+    WEIGHT_COMPOSE  = os.path.join(BASE, "weight/docker-compose.yml")
     DEVOPS_DIR      = os.path.join(BASE, "devops")
 
     SHARED_NETWORK = "shared-devops-network"
@@ -141,19 +141,19 @@ def deploy():
         shared_network=SHARED_NETWORK
     )
 
-   # update_compose_with_shared_network(
-    #    compose_path=WEIGHT_COMPOSE,
-     #   output_dir=DEVOPS_DIR,
-      #  output_filename="compose-weight.yml",
-       # shared_network=SHARED_NETWORK
-    #)
+    update_compose_with_shared_network(
+        compose_path=WEIGHT_COMPOSE,
+        output_dir=DEVOPS_DIR,
+        output_filename="compose-weight.yml",
+        shared_network=SHARED_NETWORK
+    )
 
     # -----------------------------------------------------
     # 3. Deploy both stacks using ONE compose command each
     # -----------------------------------------------------
 
     billing_output = os.path.join(DEVOPS_DIR, "compose-billing.yml")
-    #weight_output  = os.path.join(DEVOPS_DIR, "compose-weight.yml")
+    weight_output  = os.path.join(DEVOPS_DIR, "compose-weight.yml")
 
     # ---- Billing ----
     subprocess.run(
@@ -162,10 +162,10 @@ def deploy():
     )
 
     # ---- Weight ----
-   # subprocess.run(
-    #    ["docker", "compose", "-f", weight_output, "up", "--build", "-d"],
-     #   check=True
-    #)
+    subprocess.run(
+        ["docker", "compose", "-f", weight_output, "up", "--build", "-d"],
+        check=True
+    )
 
     print("✔ Deployment completed successfully")
 
