@@ -12,8 +12,7 @@ app.secret_key = secrets.token_hex(16)  # generate a random 16 characters in hex
 db_user = os.getenv("MYSQL_USER")
 db_pass = os.getenv("MYSQL_PASSWORD")
 db_name = os.getenv("MYSQL_DATABASE")
-app.config["SQLALCHEMY_DATABASE_URI"] = (
-    f"mysql+pymysql://{db_user}:{db_pass}@db:3306/{db_name}")
+app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{db_user}:{db_pass}@db:3306/{db_name}"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
@@ -84,21 +83,22 @@ class Containers_registered(db.Model):
 
 # helpter functions for db queries
 
+
 # convert string to datetime
 def str_to_datetime(ts):
     return datetime.strptime(ts, "%Y%m%d%H%M%S")
 
 
-def get_query_transactions(from_date, to_date, direction_filter):
+def get_query_transactions(from_date, to_date, direction_filter, item_filter):
     query = Transactions.query
     if from_date:
-        from_datetime = str_to_datetime(from_date)
-        query = query.filter(Transactions.datetime >= from_datetime)
+        query = query.filter(Transactions.datetime >= from_date)
     if to_date:
-        to_datetime = str_to_datetime(to_date)
-        query = query.filter(Transactions.datetime <= to_datetime)
+        query = query.filter(Transactions.datetime <= to_date)
     if direction_filter in ["in", "out"]:
         query = query.filter(Transactions.direction == direction_filter)
+    if item_filter:
+        query = query.filter(Transactions.produce == item_filter)
     return query.all()
 
 
@@ -115,7 +115,7 @@ def get_weight():
     from_date = request.args.get("from")
     to_date = request.args.get("to")
     filter_value = request.args.get("filter")
-    relevent_transactions = get_query_transactions(from_date, to_date, filter_value)
+    relevent_transactions = get_query_transactions(from_date, to_date, filter_value, None)
     results = []
     for transaction in relevent_transactions:
         results.append(
@@ -197,6 +197,37 @@ def post_weight():
     return verbose(new_row)
 
     # todo add everything into db
+
+
+@app.route("/item/<item_id>", methods=["GET"])
+def get_item(item_id):
+    raw_from = request.args.get("from")
+    raw_to = request.args.get("to")
+
+    # handle date range
+    if not raw_from:
+        from_date = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    else:
+        from_date = str_to_datetime(raw_from)
+    if not raw_to:
+        to_date = datetime.now()
+    else:
+        to_date = str_to_datetime(raw_to)
+    # query transactions by item
+
+    relevent_transactions = get_query_transactions(from_date, to_date, "none", item_id)
+    results = []
+    for transaction in relevent_transactions:
+        results.append(
+            {
+                "id": transaction.id,
+                "tara": transaction.truck_Tara_,
+                "session_id": transaction.sesstion_id,
+            }
+        )
+    if len(results) == 0:
+        return ("Item not found", 404)
+    return results
 
 
 def handle_session(direction, truck):
