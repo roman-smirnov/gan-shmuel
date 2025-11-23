@@ -15,7 +15,7 @@ app.secret_key = secrets.token_hex(16)  # generate a random 16 characters in hex
 db_user = os.getenv("MYSQL_USER")
 db_pass = os.getenv("MYSQL_PASSWORD")
 db_name = os.getenv("MYSQL_DATABASE")
-app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{db_user}:{db_pass}@db:3306/{db_name}"
+app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{db_user}:{db_pass}@weight_db:3306/{db_name}"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
@@ -264,6 +264,20 @@ def batch_weight():
         
         case _:
             return Response("Unsupported file format", status=400)
+        
+
+@app.route("/unknown", methods=["GET"])
+def unknown():
+    result = []
+    unknown_containers = (db.session.query(Containers_registered.container_id)
+                          .filter(Containers_registered.weight == "").all())
+    for container in unknown_containers:
+        result.append(container.container_id)
+    if not result:
+        return Response("No unknown containers found", status=204, mimetype="text/plain") 
+    return Response(", ".join(result) + ",", status=200, mimetype="text/plain"), 
+    
+
 
 def handle_session(direction, truck):
     if direction == "in" or direction == "none":
