@@ -1,11 +1,13 @@
-
-version: "3.9"
-
 services:
-  api:
-    build: ./api
+  devops-api:
+    build:
+      context: ..
+      dockerfile: devops/api/Dockerfile
     container_name: devops-api
     ports:
-      - "5001:5001"
+      - "8081:5000"
     environment:
       - FLASK_ENV=development
+    volumes:
+      - ..:/devops-app
+      - /var/run/docker.sock:/var/run/docker.sock

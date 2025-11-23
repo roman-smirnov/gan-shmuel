@@ -1,0 +1,8 @@
+include:
+  - ./devops/docker-compose.yml
+  - ./billing/docker-compose.yml
+  - ./weight/docker-compose.yml
+
+networks:
+  default:
+    name: gan-shmuel-net
