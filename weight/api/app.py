@@ -3,6 +3,9 @@ from flask import Flask, Response, request, session
 from flask_sqlalchemy import SQLAlchemy
 import secrets
 import os
+import json
+
+
 
 # Initialize Flask app and SQLAlchemy
 app = Flask(__name__)
@@ -231,6 +234,36 @@ def get_item(item_id):
         )
     return results
 
+
+@app.route("/batch-weight", methods=["POST"])
+def batch_weight():
+    filename = request.args.get("file")
+    extension = filename.split(".")[-1]
+    match extension:
+        case "csv":
+            with open(f"in/{filename}", "r") as f:
+                lines = f.readlines()
+                header = lines[0].strip().split(",")
+                unit = header[1]
+                for line in lines[1:]:
+                    cid, weight = line.strip().split(",")
+                    db.session.add(Containers_registered(container_id=cid, weight=weight, unit=unit))
+                    
+            db.session.commit()
+            return Response("Batch processed successfully", status=200)
+        case "json":
+            with open(f"in/{filename}", "r") as f:
+                data = json.load(f)
+            for entry in data:
+                cid = entry["id"]
+                weight = entry["weight"]
+                unit = entry["unit"]
+                db.session.add(Containers_registered(container_id=cid, weight=weight, unit=unit))
+            db.session.commit()
+            return Response("Batch processed successfully", status=200)
+        
+        case _:
+            return Response("Unsupported file format", status=400)
 
 def handle_session(direction, truck):
     if direction == "in" or direction == "none":
