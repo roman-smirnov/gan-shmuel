@@ -3,6 +3,7 @@
 services:
   db:
     image: mysql:9.0.1
+    container_name: weight_db
     env_file:
       - .env
     volumes:
@@ -18,6 +19,7 @@ services:
 
   app:
     build: ./api
+    container_name: weight_api
     env_file:
       - .env
     depends_on:

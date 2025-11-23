@@ -204,6 +204,10 @@ def get_item(item_id):
     raw_from = request.args.get("from")
     raw_to = request.args.get("to")
 
+    # return 404 if item isnt availble 
+    if len(get_query_transactions(None,None,None,item_id)) == 0 :
+        return Response("Item not found", status=404)
+    
     # handle date range
     if not raw_from:
         from_date = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -225,8 +229,6 @@ def get_item(item_id):
                 "session_id": transaction.sesstion_id,
             }
         )
-    if len(results) == 0:
-        return ("Item not found", 404)
     return results
 
 
