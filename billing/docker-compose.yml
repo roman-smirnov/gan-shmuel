@@ -7,13 +7,13 @@ services:
     ports:
       - "8083:5000"                   # Devops asked for 8083
     environment:
-      - FLASK_ENV=development
-      - DB_HOST=billing-db
-      - DB_USER=root
-      - DB_PASSWORD=password
-      - DB_NAME=billdb
-      - DB_PORT=3306
-      - WEIGHT_SERVICE_URL=http://weight:5000
+      - FLASK_ENV=${FLASK_ENV}
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - WEIGHT_SERVICE_URL=${WEIGHT_SERVICE_URL}
     depends_on:
       billing-db:
         condition: service_healthy
