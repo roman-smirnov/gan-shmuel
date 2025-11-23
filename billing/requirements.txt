@@ -3,4 +3,4 @@ mysql-connector-python
 requests
 openpyxl
 pytest
-
+pandas

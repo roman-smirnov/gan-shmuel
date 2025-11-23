@@ -38,3 +38,7 @@ htmlcov/
 .env.local
 .env.development
 .env.production
+
+
+# weight test file 
+weight/api/in

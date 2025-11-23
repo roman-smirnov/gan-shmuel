@@ -7,18 +7,21 @@ services:
     ports:
       - "8083:5000"                   # Devops asked for 8083
     environment:
-      - FLASK_ENV=development
-      - DB_HOST=billing-db
-      - DB_USER=root
-      - DB_PASSWORD=password
-      - DB_NAME=billdb
-      - DB_PORT=3306
-      - WEIGHT_SERVICE_URL=http://weight:5000
+      - FLASK_ENV=${FLASK_ENV}
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - PROD=${PROD:false}
+      - WEIGHT_BASE_URL=${WEIGHT_BASE_URL}
     depends_on:
       billing-db:
         condition: service_healthy
     volumes:
       - ./in:/app/in
+    networks:
+      - shared-network
 
   # DATABASE SERVICE
   billing-db:
@@ -34,7 +37,12 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    networks:
+      - shared-network
+
+networks:
+  shared-network:
+    external: true
 
 volumes:
   billing-db-data:
-

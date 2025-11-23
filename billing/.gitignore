@@ -1,36 +1,44 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
+
+# Virtual environments
 venv/
-ENV/
+.env/
+.venv/
+env/
+venv.bak/
+.env.bak/
 
-# Environment
-.env
-*.log
-
-# IDE
-.idea/
+# VS Code settings
 .vscode/
-*.swp
-*.swo
 
-# OS
+# macOS cruft
 .DS_Store
-Thumbs.db
 
-# Testing
+# Python packaging / build
+build/
+dist/
+*.egg-info/
+
+# Test / coverage caches
 .pytest_cache/
 .coverage
 htmlcov/
 
-# Uploaded files (keep sample, ignore user uploads)
-in/*.xlsx
-in/*.csv
-!in/rates.xlsx
-!in/.gitkeep
+# MyPy / type checking
+.mypy_cache/
 
-# Docker
+# Logs
 *.log
+
+# Local environment / secrets files (if you add them later)
+*.env
+.env.local
+.env.development
+.env.production
+
+
+# weight test file 
+weight/api/in
