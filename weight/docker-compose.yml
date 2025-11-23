@@ -1,7 +1,7 @@
 
 
 services:
-  db:
+  weight_db:
     image: mysql:9.0.1
     container_name: weight_db
     env_file:
@@ -17,7 +17,7 @@ services:
       retries: 10
 
 
-  app:
+  weight_api:
     build: ./api
     container_name: weight_api
     env_file:
