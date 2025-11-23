@@ -110,30 +110,19 @@ def update_compose_with_shared_network(
 
 
 def deploy():
-    """
-    1. Creates shared docker network
-    2. Rewrites both compose files to use it
-    3. Deploys both stacks
-    """
-
     BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
     BILLING_COMPOSE = os.path.join(BASE, "billing/docker-compose.yml")
     WEIGHT_COMPOSE  = os.path.join(BASE, "weight/docker-compose.yml")
     DEVOPS_DIR      = os.path.join(BASE, "devops")
+    SHARED_NETWORK  = "shared-devops-network"
 
-    SHARED_NETWORK = "shared-devops-network"
-
-    # -----------------------------------------------------
-    # 1. Ensure shared external network exists
-    # -----------------------------------------------------
+    # 1. Ensure network exists
     subprocess.run(
         ["docker", "network", "create", SHARED_NETWORK],
-        check=False  # ignore error if network already exists
+        check=False
     )
 
-    # -----------------------------------------------------
-    # 2. Rewrite BOTH compose files into BASE/devops
-    # -----------------------------------------------------
+    # 2. Rewrite compose files
     update_compose_with_shared_network(
         compose_path=BILLING_COMPOSE,
         output_dir=DEVOPS_DIR,
@@ -148,25 +137,20 @@ def deploy():
         shared_network=SHARED_NETWORK
     )
 
-    # -----------------------------------------------------
-    # 3. Deploy both stacks using ONE compose command each
-    # -----------------------------------------------------
-
     billing_output = os.path.join(DEVOPS_DIR, "compose-billing.yml")
     weight_output  = os.path.join(DEVOPS_DIR, "compose-weight.yml")
 
-    # ---- Billing ----
+    # 3. Deploy isolated stacks
     subprocess.run(
-        ["docker", "compose", "-f", billing_output, "up", "--build", "-d"],
+        ["docker", "compose", "-p", "billing",
+         "-f", billing_output, "up", "--build", "-d"],
         check=True
     )
 
-    # ---- Weight ----
     subprocess.run(
-        ["docker", "compose", "-f", weight_output, "up", "--build", "-d"],
+        ["docker", "compose", "-p", "weight",
+         "-f", weight_output, "up", "--build", "-d"],
         check=True
     )
 
     print("✔ Deployment completed successfully")
-
-

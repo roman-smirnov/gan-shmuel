@@ -24,7 +24,7 @@ def register_routes(app):
             return jsonify({"status": "ignored (not master)"}), 200
 
         # pull code
-        update_repo()
+        #update_repo()
 
         # deploy containers
         deploy()
