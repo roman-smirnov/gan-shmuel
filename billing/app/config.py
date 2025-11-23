@@ -3,7 +3,7 @@ import os
 class Config:
    DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 
-   WEIGHT_BASE_UL = os.environ["WEIGHT_BASE_URL"]
+   WEIGHT_BASE_URL = os.environ["WEIGHT_BASE_URL"]
 
    DB_HOST = os.environ['DB_HOST']
    DB_USER = os.environ['DB_USER']
