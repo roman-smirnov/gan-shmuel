@@ -18,10 +18,49 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
+def convert_kg_to_lbs(kg_num):
+    return int(float(kg_num)*2.20)
+
+def convert_lbs_to_kg(lbs_num):
+    return int(float(lbs_num) / 2.20)
+
+def calc_containers_weight(containers):
+    #todo: take into consideration weight unit differences
+    #the function receives a list(string separated by ",") of containers
+    #the function return the total weight of the containers or na if there was an issue
+    total_weight = 0
+    try:
+        id_list = [int(i) for i in containers.split(",")]  # creates a list of id from the containers
+        results = (db.session.query(Containers_registered.weight, Containers_registered.unit).filter
+                   (Containers_registered.container_id.in_(id_list)).all())  # get list of tuples with all container weight
+        for value in results:  # loops on all list
+            if value[1] == "kg":
+                total_weight = total_weight - value[0]
+            else:
+                total_weight = total_weight - convert_lbs_to_kg(value[0])
+        return total_weight
+
+    except: #except will raise in case the container wasn't found  and return na
+        return None
+
+
+def calc_neto_fruit(bruto_weight,truck_tara, containers):
+    #this functions receives a bruto weight, truck tara and a list(string separated by ",") of containers
+    #and returns the neto weight by the following calculation neto = brutu - truck tara - containers_tara
+    container_weight = calc_containers_weight(containers)
+    if container_weight:
+        return bruto_weight - (int(truck_tara) + container_weight)
+    else:
+        return None
+
+
+    print("issue with calculating ")
+    return None
+    #pass containers to containers db
 
 # Define database models
 class Transactions(db.Model):
-    __tablename__ = "Transactions"
+    __tablename__ = "transactions"
 
     id = db.Column(db.Integer, primary_key=True)
     datetime = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -29,14 +68,14 @@ class Transactions(db.Model):
     truck = db.Column(db.String(50))
     containers = db.Column(db.String(10000))
     bruto = db.Column(db.Integer)
-    truck_Tara_ = db.Column(db.Integer)
+    truckTara = db.Column(db.Integer)
     neto = db.Column(db.Integer)
     produce = db.Column(db.String(50))
-    sesstion_id = db.Column(db.Integer)
+    #sesstion_id = db.Column(db.Integer)
 
 
-class Containers_registerd(db.Model):
-    __tablename__ = "containers_registerd"
+class Containers_registered(db.Model):
+    __tablename__ = "containers_registered"
 
     container_id = db.Column(db.String(15), primary_key=True)
     weight = db.Column(db.Integer)
@@ -91,19 +130,71 @@ def get_weight():
         )
     return {"results": results}
 
+def update_row(old_row, new_row):
+    old_row.neto = new_row.neto
+    old_row.bruto = new_row.bruto
+    old_row.containers = new_row.containers
+    old_row.truck = new_row.truck
+    old_row.produce = new_row.produce
+    db.session.commit()
+
+    return 1
+
+def verbose(row):
+    #the function receives a transaction row
+    #the functions return json for post weight return value
+    if row.direction == "out":
+        return {
+            "id": row.id,
+            "truck": row.truck,
+            "bruto": row.bruto,
+            "truckTara": row.truckTara,
+            "neto": row.neto
+        }
+    else:
+        return {
+            "id": row.id,
+            "truck": row.truck,
+            "bruto": row.bruto
+        }
 
 @app.route("/weight", methods=["POST"])
 def post_weight():
-    direction = request.form["direction"]
-    truck = request.form["licence"]
-    weight = request.form["weight"]
-    containers = request.form["containers"]
-    unit = request.form["unit"]
-    force = request.form["force"]
-    produce = request.form["produce"]
-    # timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    handle_session(direction, truck)  # handle the sessions
+    data = request.form.to_dict()
+    data["truckTara"] = "1000"
+    neto = calc_neto_fruit(int(data["weight"]), data["truckTara"], data["containers"])
+    last_row = Transactions.query.order_by(Transactions.id.desc()).first()
+    handle_session(data["direction"], data["truck"])  # handle the sessions
+
+    new_row = Transactions()
+    new_row.produce = data["produce"]
+    new_row.bruto = data["weight"]
+    new_row.direction = data["direction"]
+    new_row.neto = neto
+    new_row.truck = data["truck"]
+    new_row.containers = data["containers"]
+    new_row.truckTara = data["truckTara"]
+
+    print(last_row)
+    if last_row: #check if the last row exist
+        if (( last_row.direction == "in" and last_row.direction == new_row.direction )
+            or (last_row.direction == "out" and last_row.direction == new_row.direction)):
+
+            if data["force"]:
+                return 0
+            elif data["force"] == "True":
+                update_row(last_row,new_row )
+                return verbose(last_row)
+            else:
+                return 0
+
+
+
+    db.session.add(new_row)
+    db.session.commit()
+    #
+    return verbose(new_row)
 
     # todo add everything into db
 
