@@ -5,9 +5,10 @@ services:
   billing-app:
     build: .                          # Build image using ./Dockerfile
     ports:
-      - "8083:5000"                   # Devops asked for 8083
+      - "${BILLING_PORT}:5000"                   # Devops asked for 8083
     environment:
       - FLASK_ENV=${FLASK_ENV}
+      - BILLING_PORT=${BILLING_PORT}
       - DB_HOST=${DB_HOST}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
