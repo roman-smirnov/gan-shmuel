@@ -11,4 +11,3 @@ class Config:
    DB_NAME = os.environ['DB_NAME']
    DB_PORT = os.environ['DB_PORT']
    
- 
