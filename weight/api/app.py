@@ -48,20 +48,16 @@ def calc_containers_weight(containers):
         return None
 
 
-def calc_neto_fruit(bruto_weight,truck_tara, containers):
+def calc_neto_fruit(bruto_weight,truckTara, containers):
     #this functions receives a bruto weight, truck tara and a list(string separated by ",") of containers
     #and returns the neto weight by the following calculation neto = brutu - truck tara - containers_tara
     container_weight = calc_containers_weight(containers)
     if container_weight:
-        return bruto_weight - (int(truck_tara) + container_weight)
+        return bruto_weight - (int(truckTara) + container_weight)
 
     else:
         return None
 
-
-    print("issue with calculating ")
-    return None
-    #pass containers to containers db
 
 # Define database models
 class Transactions(db.Model):
@@ -95,21 +91,20 @@ def str_to_datetime(ts):
     return datetime.strptime(ts, "%Y%m%d%H%M%S")
 
 def get_query_transactions(from_date=None, to_date=None, direction_filter=None, item_filter=None, truck_filter=None):
-    try:
-        query = Transactions.query
-        if from_date:
-            query = query.filter(Transactions.datetime >= from_date)
-        if to_date:
-            query = query.filter(Transactions.datetime <= to_date)
-        if direction_filter in ["in", "out"]:
-            query = query.filter(Transactions.direction == direction_filter)
-        if item_filter:
-            query = query.filter(Transactions.produce == item_filter)
-        if truck_filter:
-            query = query.filter(Transactions.truck == truck_filter)
-        return query.all()
-    except IndexError:
-        return None
+    query = Transactions.query
+    if from_date:
+        query = query.filter(Transactions.datetime >= from_date)
+    if to_date:
+        query = query.filter(Transactions.datetime <= to_date)
+    if direction_filter in ["in", "out"]:
+        query = query.filter(Transactions.direction == direction_filter)
+    if item_filter:
+        query = query.filter(Transactions.produce == item_filter)
+    if truck_filter:
+        query = query.filter(Transactions.truck == truck_filter)
+    return query.all()
+
+
 
 
 # endpoint definitions
@@ -122,12 +117,19 @@ def health():
 
 @app.route("/weight", methods=["GET"])
 def get_weight():
-    from_date = request.args.get("from")
-    to_date = request.args.get("to")
-    filter_value = request.args.get("filter")
-    relevent_transactions = get_query_transactions(from_date, to_date, filter_value, None)
+    raw_from = request.args.get("from")
+    raw_to = request.args.get("to")
+    direction = request.args.get("filter")
+
+
+
+    # Parse dates if provided
+    from_date = str_to_datetime(raw_from) if raw_from else None
+    to_date = str_to_datetime(raw_to) if raw_to else None
+
+    relevant_transactions = get_query_transactions(from_date, to_date, direction, None, None)
     results = []
-    for transaction in relevent_transactions:
+    for transaction in relevant_transactions:
         results.append(
             {
                 "id": transaction.id,
@@ -174,7 +176,7 @@ def post_weight():
     data = request.form.to_dict()
     #last_row = Transactions.query.order_by(Transactions.id.desc()).first()
     last_row = None
-    rows = get_query_transactions(truck_filter=data["truck"]) #get the last transaction of the truck
+    rows = get_query_transactions(None, None, None, None, data["truck"]) #get the last transaction of the truck
     if rows:
         last_row = rows[-1]
 
@@ -219,7 +221,7 @@ def get_item(item_id):
     raw_to = request.args.get("to")
 
     # return 404 if item isnt availble 
-    if len(get_query_transactions(None,None,None,item_id)) == 0 :
+    if len(get_query_transactions(None,None,None,item_id,None)) == 0 :
         return Response("Item not found", status=404)
     
     # handle date range
@@ -233,13 +235,13 @@ def get_item(item_id):
         to_date = str_to_datetime(raw_to)
     # query transactions by item
 
-    relevent_transactions = get_query_transactions(from_date, to_date, "none", item_id)
+    relevent_transactions = get_query_transactions(from_date, to_date, None, item_id, None)
     results = []
     for transaction in relevent_transactions:
         results.append(
             {
                 "id": transaction.id,
-                "tara": transaction.truck_Tara_,
+                "tara": transaction.truckTara,
                 "session_id": transaction.session_id,
             }
         )
@@ -297,7 +299,7 @@ def handle_session(new_row,direction, truck):
         new_row.session_id = rand_num
 
     elif direction == "out":
-        rows = get_query_transactions(truck_filter=truck)  # get the last transaction of the truck
+        rows = get_query_transactions(None, None, None, None, truck)  # get the last transaction of the truck
         if rows:
             last_row = rows[-1]
             session_id = last_row.session_id
