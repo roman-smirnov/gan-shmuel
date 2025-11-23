@@ -20,8 +20,6 @@ services:
         condition: service_healthy
     volumes:
       - ./in:/app/in
-    networks:
-      - shared-network
 
   # DATABASE SERVICE
   billing-db:
@@ -37,12 +35,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    networks:
-      - shared-network
 
-networks:
-  shared-network:
-    external: true
 
 volumes:
   billing-db-data:
