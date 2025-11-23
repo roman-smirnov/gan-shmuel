@@ -24,7 +24,7 @@ def calculate_bill(provider_id, from_date=None, to_date=None):
         # Default: now
         to_date = now.strftime('%Y%m%d%H%M%S')
     
-    # Validate date format (should be 14 digits)
+    # Validate date format 
     if len(from_date) != 14 or not from_date.isdigit():
         raise ValueError(f"Invalid from date format: {from_date}. Expected yyyymmddhhmmss")
     
