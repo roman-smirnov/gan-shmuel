@@ -4,6 +4,8 @@ from .routes.health import health_bp
 from .routes.provider import providers_bp
 from .routes.truck import trucks_bp
 from .routes.rates import rates_bp
+from .routes.ui import ui_bp
+
 '''from .routes.providers import providers_bp
 from .routes.bills import bills_bp'''
 
