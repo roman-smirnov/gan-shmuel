@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
-from flask import Flask, Response, request, abort, jsonify
-
+from flask import Flask, Response, request, render_template, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import secrets
 import os
@@ -24,7 +23,10 @@ def init_app(test_config=None):
         db_user = os.getenv("MYSQL_USER")
         db_pass = os.getenv("MYSQL_PASSWORD")
         db_name = os.getenv("MYSQL_DATABASE")
-        app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{db_user}:{db_pass}@weight-db:3306/{db_name}"
+        db_port = os.getenv("WEIGHT_MYSQL_PORT")
+        app.config["SQLALCHEMY_DATABASE_URI"] = (
+            f"mysql+pymysql://{db_user}:{db_pass}@weight-db:{db_port}/{db_name}"
+        )
         app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # Bind db to this app
@@ -45,26 +47,30 @@ def init_app(test_config=None):
         raw_to = request.args.get("to")
         direction = request.args.get("filter")
 
-        # Parse dates if provided
         from_date = utils.str_to_datetime(raw_from) if raw_from else None
         to_date = utils.str_to_datetime(raw_to) if raw_to else None
 
         relevant_transactions = utils.get_query_transactions(
             from_date, to_date, direction, None, None
         )
-        results = []
-        for transaction in relevant_transactions:
-            results.append(
+
+        if is_ui_mode():
+            return render_template("weight_search.html", results=relevant_transactions)
+
+        # API mode - convert to dict
+        return {
+            "results": [
                 {
-                    "id": transaction.id,
-                    "direction": transaction.direction,
-                    "bruto": transaction.bruto,
-                    "neto": transaction.neto,
-                    "produce": transaction.produce,
-                    "containers": transaction.containers,
+                    "id": t.id,
+                    "direction": t.direction,
+                    "bruto": t.bruto,
+                    "neto": t.neto,
+                    "produce": t.produce,
+                    "containers": t.containers,
                 }
-            )
-        return {"results": results}
+                for t in relevant_transactions
+            ]
+        }
 
     @app.route("/weight", methods=["POST"])
     def post_weight():
@@ -111,6 +117,8 @@ def init_app(test_config=None):
                 # handles situation that new_record conflicts with old, truck is in and tries to enter again
                 if force == "True":
                     utils.update_row(last_row, new_row)
+                    if is_ui_mode():
+                        return render_template("weight_new.html", result=utils.verbose(last_row))
                     return utils.verbose(last_row)
 
                 abort(409, description=f"truck already {last_row.direction} use force=True to update")
@@ -120,7 +128,11 @@ def init_app(test_config=None):
 
         db.session.add(new_row)
         db.session.commit()
-        #
+
+        # UI mode (form from weight_new.html)
+        if is_ui_mode():
+            return render_template("weight_new.html", result=utils.verbose(new_row))
+
         return utils.verbose(new_row)
 
     @app.route("/item/<item_id>", methods=["GET"])
@@ -128,72 +140,103 @@ def init_app(test_config=None):
         raw_from = request.args.get("from")
         raw_to = request.args.get("to")
 
-        # return 404 if item isnt availble
-        if len(utils.get_query_transactions(None, None, None, item_id, None)) == 0:
+        # Check if item exists
+        if not utils.get_query_transactions(None, None, None, item_id, None):
+            if is_ui_mode():
+                return render_template(
+                    "item.html",
+                    results=None,
+                    error="Item not found",
+                    item_id=item_id,
+                    raw_from=raw_from or "",
+                    raw_to=raw_to or "",
+                )
             return Response("Item not found", status=404)
 
-        # handle date range
-        if not raw_from:
-            from_date = datetime.now().replace(
-                day=1, hour=0, minute=0, second=0, microsecond=0
-            )
-        else:
-            from_date = utils.str_to_datetime(raw_from)
-        if not raw_to:
-            to_date = datetime.now()
-        else:
-            to_date = utils.str_to_datetime(raw_to)
-        # query transactions by item
+        # Set date range
+        from_date = (
+            utils.str_to_datetime(raw_from)
+            if raw_from
+            else datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        )
+        to_date = utils.str_to_datetime(raw_to) if raw_to else datetime.now()
 
-        relevent_transactions = utils.get_query_transactions(
+        relevant_transactions = utils.get_query_transactions(
             from_date, to_date, None, item_id, None
         )
-        results = []
-        for transaction in relevent_transactions:
-            results.append(
-                {
-                    "id": transaction.id,
-                    "tara": transaction.truckTara,
-                    "session_id": transaction.session_id,
-                }
+
+        # Build results with appropriate key names
+        tara_key = "truckTara" if is_ui_mode() else "tara"
+        results = [
+            {"id": t.id, tara_key: t.truckTara, "session_id": t.session_id}
+            for t in relevant_transactions
+        ]
+
+        if is_ui_mode():
+            return render_template(
+                "item.html",
+                results=results,
+                error=None,
+                item_id=item_id,
+                raw_from=raw_from or "",
+                raw_to=raw_to or "",
             )
+
         return results
 
     @app.route("/batch-weight", methods=["POST"])
     def batch_weight():
         filename = request.args.get("file")
         extension = filename.split(".")[-1]
-        match extension:
-            case "csv":
-                with open(f"in/{filename}", "r") as f:
-                    lines = f.readlines()
-                    header = lines[0].strip().split(",")
-                    unit = header[1]
-                    for line in lines[1:]:
-                        cid, weight = line.strip().split(",")
-                        db.session.add(
-                            Containers_registered(
-                                container_id=cid, weight=weight, unit=unit
-                            )
-                        )
 
-                db.session.commit()
-                return Response("Batch processed successfully", status=200)
-            case "json":
-                with open(f"in/{filename}", "r") as f:
-                    data = json.load(f)
-                for entry in data:
-                    cid = entry["id"]
-                    weight = entry["weight"]
-                    unit = entry["unit"]
+        def process_csv():
+            with open(f"in/{filename}", "r") as f:
+                lines = f.readlines()
+                unit = lines[0].strip().split(",")[1]
+                for line in lines[1:]:
+                    cid, weight = line.strip().split(",")
                     db.session.add(
                         Containers_registered(container_id=cid, weight=weight, unit=unit)
                     )
-                db.session.commit()
-                return Response("Batch processed successfully", status=200)
 
-            case _:
-                return Response("Unsupported file format", status=400)
+        def process_json():
+            with open(f"in/{filename}", "r") as f:
+                data = json.load(f)
+            for entry in data:
+                db.session.add(
+                    Containers_registered(
+                        container_id=entry["id"], weight=entry["weight"], unit=entry["unit"]
+                    )
+                )
+
+        processors = {"csv": process_csv, "json": process_json}
+
+        if extension not in processors:
+            return Response("Unsupported file format", status=400)
+
+        processors[extension]()
+        db.session.commit()
+        return Response("Batch processed successfully", status=200)
+
+    # UI routes
+    @app.route("/", methods=["GET"])
+    def home():
+        return render_template("home.html")
+
+    @app.route("/ui/weight/new", methods=["GET"])
+    def ui_weight_new():
+        return render_template("weight_new.html", result=None)
+
+    @app.route("/ui/item", methods=["GET"])
+    def ui_item():
+        return render_template(
+            "item.html",
+            results=None,
+            error=None,
+            item_id="",
+            raw_from="",
+            raw_to="",
+        )
 
     @app.route("/session/<id>", methods=["GET"])
     def get_session(id):
@@ -210,39 +253,71 @@ def init_app(test_config=None):
         if out_row:
             return jsonify({
                 "id": str(out_row.id),
-
                 "truck": out_row.truck if out_row.truck else "na",
                 "bruto": out_row.bruto,
                 "truckTara": out_row.truckTara if out_row.truckTara is not None else "na",
                 "neto": out_row.neto if out_row.neto is not None else "na"
             }), 200
+        else:
+            in_row = rows[0]
+            result = {
+                "id": str(in_row.id),
+                "truck": in_row.truck if in_row.truck else "na",
+                "bruto": in_row.bruto
+            }
 
-        in_row = rows[0]
-        return jsonify({
-            "id": str(in_row.id),
-            "truck": in_row.truck if in_row.truck else "na",
-            "bruto": in_row.bruto
-        }), 200
+        if is_ui_mode():
+            return render_template("session_details.html", session=out_row or rows[0], error=None)
+
+        return jsonify(result), 200
+
+    @app.route("/ui/session", methods=["GET"])
+    def weighting_session():
+        session_id = request.args.get("session_id")
+        truck = request.args.get("truck")
+
+        sessions = None
+
+        if session_id:
+            # Search by session ID
+            sessions = Transactions.query.filter(Transactions.session_id == session_id).all()
+        elif truck:
+            # Search by truck
+            sessions = Transactions.query.filter(Transactions.truck == truck).order_by(
+                Transactions.datetime.desc()).all()
+
+        return render_template("session.html", sessions=sessions)
+
 
     @app.route("/unknown", methods=["GET"])
     def unknown():
-        result = []
-        unknown_containers = (
-            db.session.query(Containers_registered.container_id)
-            .filter(Containers_registered.weight == "")
+        unknown_containers = [
+            c.container_id
+            for c in db.session.query(Containers_registered.container_id)
+            .filter(Containers_registered.weight.in_([0, ""]))
             .all()
-        )
-        for container in unknown_containers:
-            result.append(container.container_id)
-        if not result:
+        ]
+        if is_ui_mode():
+            return render_template("unknown.html", containers=unknown_containers)
+
+        # API mode
+        if not unknown_containers:
             return Response(
                 "No unknown containers found", status=204, mimetype="text/plain"
             )
-        return Response(", ".join(result) + ",", status=200, mimetype="text/plain")
 
+        return Response(
+            ", ".join(unknown_containers) + ",", status=200, mimetype="text/plain"
+        )
     return app
-    
-#end
+
+# Initialize Flask app and SQLAlchemy
+# generate a random 12 characters in hexadecimal for secret key
+
+# Configure the database connection
+
+def is_ui_mode():
+    return request.args.get("ui") == "1" or request.form.get("ui") == "1"
 
 # Define database models
 class Transactions(db.Model):
@@ -267,10 +342,12 @@ class Containers_registered(db.Model):
     weight = db.Column(db.Integer)
     unit = db.Column(db.String(10))
 
-# inject dependencies to utils
+
+# Helper function
+
+
 
 # endpoint definitions
-
 
 
 if __name__ == "__main__":

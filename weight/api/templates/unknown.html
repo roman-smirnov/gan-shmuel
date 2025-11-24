@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Unknown Containers{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('home') }}" class="btn btn-link px-0 mb-3">&larr; Back to dashboard</a>
+
+<h2 class="mb-3">Unknown containers</h2>
+
+{% if not containers %}
+  <p class="text-muted">No unknown containers at the moment. 🎉</p>
+{% else %}
+  <ul class="list-group">
+    {% for cid in containers %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span>{{ cid }}</span>
+        <span class="badge bg-warning text-dark">no weight</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}

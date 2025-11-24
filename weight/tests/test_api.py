@@ -9,6 +9,16 @@ from api.app import init_app, db, Transactions  # import the factory function
 @pytest.fixture
 def client():
     # pass a test config if you want an in-memory database
+    """
+    db_user = os.getenv("MYSQL_USER")
+    db_pass = os.getenv("MYSQL_PASSWORD")
+    db_name = os.getenv("MYSQL_DATABASE")
+    db_port = os.getenv("WEIGHT_MYSQL_PORT")
+        app.config["SQLALCHEMY_DATABASE_URI"] = (
+        f"mysql+pymysql://{db_user}:{db_pass}@weight-db:{db_port}/{db_name}"
+    )
+    """
+
     test_config = {
         "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
         "SQLALCHEMY_TRACK_MODIFICATIONS": False

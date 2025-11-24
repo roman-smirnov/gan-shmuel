@@ -2,11 +2,11 @@ import secrets
 from datetime import datetime 
 from flask import session, abort
 
-# will be injected from app.py
+
+# dependencies to be injected from app.py
 db = None
 Transactions = None
 Containers_registered = None
-
 
 
 # ---
@@ -121,7 +121,6 @@ def verbose(row):
 
 
 def handle_session(new_row, direction, truck):
-
     if direction == "in" or direction == "none":
         # generate session
         rand_num = secrets.randbelow(2000000000)  # creates a random number for the
