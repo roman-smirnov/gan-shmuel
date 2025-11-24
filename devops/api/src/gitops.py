@@ -1,8 +1,7 @@
 import os
 import subprocess
 
-BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
-REPO_PATH = BASE
+REPO_PATH = os.environ["PROJECT_ROOT"]
 REPO_URL = "git@github.com:ORG/REPO.git"
 
 def repo_exists() -> bool:
