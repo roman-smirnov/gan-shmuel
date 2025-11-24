@@ -5,14 +5,16 @@ services:
   billing-app:
     build: .                          # Build image using ./Dockerfile
     ports:
-      - "8083:5000"                   # Devops asked for 8083
+      - "${BILLING_PORT}:5000"                   # Devops asked for 8083
     environment:
-      - FLASK_ENV=development
-      - DB_HOST=billing-db
-      - DB_USER=root
-      - DB_PASSWORD=password
-      - DB_NAME=billdb
-      - WEIGHT_SERVICE_URL=http://weight:5000
+      - FLASK_ENV=${FLASK_ENV}
+      - BILLING_PORT=${BILLING_PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - WEIGHT_BASE_URL=${WEIGHT_BASE_URL}
     depends_on:
       billing-db:
         condition: service_healthy
