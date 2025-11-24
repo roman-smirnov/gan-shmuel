@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
-from app.models.truck import create_truck, update_truck, get_truck
+from datetime import datetime
+from app.models.truck import create_truck, update_truck, get_truck, get_truck_sessions
 from app.models.provider import get_provider
 
 trucks_bp = Blueprint("trucks", __name__)
@@ -106,3 +107,42 @@ def update_truck_provider(truck_id):
 
     return jsonify({"id": truck_id, "provider": provider_id}), 200
 
+
+@trucks_bp.route("/truck/<string:truck_id>", methods=["GET"])
+def get_truck_info(truck_id):
+    """
+    GET /truck/<id>?from=t1&to=t2
+    Returns:
+    {
+      "id": <str>,
+      "tara": <int> or "na",
+      "sessions": [ <id1>, ... ]
+    }
+    """
+
+    truck = get_truck(truck_id)
+    if not truck:
+        return jsonify({"error": "Truck not found"}), 404
+
+    t1 = request.args.get("from")
+    t2 = request.args.get("to")
+
+    now = datetime.now()
+    if not t2:
+        t2 = now.strftime("%Y%m%d%H%M%S")
+    if not t1:
+        first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        t1 = first_of_month.strftime("%Y%m%d%H%M%S")
+
+    if not (len(t1) == 14 and t1.isdigit() and len(t2) == 14 and t2.isdigit()):
+        return jsonify({"error": "from/to must be in format yyyymmddhhmmss"}), 400
+
+    sessions_info = get_truck_sessions(truck_id, t1, t2)
+
+    result = {
+        "id": truck_id,
+        "tara": sessions_info["tara"],
+        "sessions": sessions_info["session_ids"]
+    }
+
+    return jsonify(result), 200
