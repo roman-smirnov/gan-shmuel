@@ -7,9 +7,9 @@ from flask import Blueprint, jsonify, request
 from app.models.provider import get_provider
 from app.services.billing_service import calculate_bill
 
-bp = Blueprint('bills', __name__)
+bills_bp = Blueprint('bills', __name__)
 
-@bp.route('/bill/<int:provider_id>', methods=['GET'])
+@bills_bp.route('/bill/<int:provider_id>', methods=['GET'])
 def get_bill(provider_id):
     """
     Generate a billing report for a provider.

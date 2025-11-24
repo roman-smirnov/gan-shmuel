@@ -4,8 +4,7 @@ from .routes.health import health_bp
 from .routes.provider import providers_bp
 from .routes.truck import trucks_bp
 from .routes.rates import rates_bp
-'''from .routes.providers import providers_bp
-from .routes.bills import bills_bp'''
+from .routes.bills import bills_bp
 
 def create_app():
     app = Flask(__name__)
@@ -16,6 +15,6 @@ def create_app():
     app.register_blueprint(providers_bp)
     app.register_blueprint(trucks_bp)
     app.register_blueprint(rates_bp)
-    # app.register_blueprint(bills_bp)
+    app.register_blueprint(bills_bp)
 
     return app
