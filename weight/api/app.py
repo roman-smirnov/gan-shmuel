@@ -1,11 +1,11 @@
 from datetime import datetime, timezone
-from flask import Flask, Response, request
+from flask import Flask, Response, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 import secrets
 import os
 import json
 import utils
-    
+
 
 # Initialize Flask app and SQLAlchemy
 app = Flask(__name__)
@@ -48,10 +48,16 @@ class Containers_registered(db.Model):
     weight = db.Column(db.Integer)
     unit = db.Column(db.String(10))
 
-# inject dependencies to utils
+
+# Inject dependencies to utils
 utils.db = db
 utils.Transactions = Transactions
 utils.Containers_registered = Containers_registered
+
+
+# Helper function
+def is_ui_mode():
+    return request.args.get("ui") == "1" or request.form.get("ui") == "1"
 
 
 # endpoint definitions
@@ -68,26 +74,30 @@ def get_weight():
     raw_to = request.args.get("to")
     direction = request.args.get("filter")
 
-    # Parse dates if provided
     from_date = utils.str_to_datetime(raw_from) if raw_from else None
     to_date = utils.str_to_datetime(raw_to) if raw_to else None
 
     relevant_transactions = utils.get_query_transactions(
         from_date, to_date, direction, None, None
     )
-    results = []
-    for transaction in relevant_transactions:
-        results.append(
+
+    if is_ui_mode():
+        return render_template("weight_search.html", results=relevant_transactions)
+
+    # API mode - convert to dict
+    return {
+        "results": [
             {
-                "id": transaction.id,
-                "direction": transaction.direction,
-                "bruto": transaction.bruto,
-                "neto": transaction.neto,
-                "produce": transaction.produce,
-                "containers": transaction.containers,
+                "id": t.id,
+                "direction": t.direction,
+                "bruto": t.bruto,
+                "neto": t.neto,
+                "produce": t.produce,
+                "containers": t.containers,
             }
-        )
-    return {"results": results}
+            for t in relevant_transactions
+        ]
+    }
 
 
 @app.route("/weight", methods=["POST"])
@@ -109,7 +119,9 @@ def post_weight():
     new_row.truck = int(data["truck"])
     new_row.containers = data["containers"]
     new_row.truckTara = None
-    utils.handle_session(new_row, data["direction"], data["truck"])  # handle the sessions
+    utils.handle_session(
+        new_row, data["direction"], data["truck"]
+    )  # handle the sessions
     if last_row:  # check if the last row exist
         if last_row.direction == "in" and new_row.direction == "out":
             containers_weight = utils.calc_containers_weight(new_row.containers)
@@ -130,8 +142,11 @@ def post_weight():
                     f"truck already {last_row.direction} use force True to update"
                 )
             elif data["force"] == "True":
-                utils.update_row(last_row, new_row)
-                return utils.verbose(last_row)
+                # UI mode for force update
+                if is_ui_mode():
+                    return render_template(
+                        "weight_new.html", result=utils.verbose(last_row)
+                    )
             else:
                 raise Exception(
                     f"truck already {last_row.direction} use force True to update"
@@ -139,8 +154,10 @@ def post_weight():
 
     db.session.add(new_row)
     db.session.commit()
-    #
-    return utils.verbose(new_row)
+
+    # UI mode (form from weight_new.html)
+    if is_ui_mode():
+        return render_template("weight_new.html", result=utils.verbose(new_row))
 
 
 @app.route("/item/<item_id>", methods=["GET"])
@@ -148,35 +165,48 @@ def get_item(item_id):
     raw_from = request.args.get("from")
     raw_to = request.args.get("to")
 
-    # return 404 if item isnt availble
-    if len(utils.get_query_transactions(None, None, None, item_id, None)) == 0:
+    # Check if item exists
+    if not utils.get_query_transactions(None, None, None, item_id, None):
+        if is_ui_mode():
+            return render_template(
+                "item.html",
+                results=None,
+                error="Item not found",
+                item_id=item_id,
+                raw_from=raw_from or "",
+                raw_to=raw_to or "",
+            )
         return Response("Item not found", status=404)
 
-    # handle date range
-    if not raw_from:
-        from_date = datetime.now().replace(
-            day=1, hour=0, minute=0, second=0, microsecond=0
-        )
-    else:
-        from_date = utils.str_to_datetime(raw_from)
-    if not raw_to:
-        to_date = datetime.now()
-    else:
-        to_date = utils.str_to_datetime(raw_to)
-    # query transactions by item
+    # Set date range
+    from_date = (
+        utils.str_to_datetime(raw_from)
+        if raw_from
+        else datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    )
+    to_date = utils.str_to_datetime(raw_to) if raw_to else datetime.now()
 
-    relevent_transactions = utils.get_query_transactions(
+    relevant_transactions = utils.get_query_transactions(
         from_date, to_date, None, item_id, None
     )
-    results = []
-    for transaction in relevent_transactions:
-        results.append(
-            {
-                "id": transaction.id,
-                "tara": transaction.truckTara,
-                "session_id": transaction.session_id,
-            }
+
+    # Build results with appropriate key names
+    tara_key = "truckTara" if is_ui_mode() else "tara"
+    results = [
+        {"id": t.id, tara_key: t.truckTara, "session_id": t.session_id}
+        for t in relevant_transactions
+    ]
+
+    if is_ui_mode():
+        return render_template(
+            "item.html",
+            results=results,
+            error=None,
+            item_id=item_id,
+            raw_from=raw_from or "",
+            raw_to=raw_to or "",
         )
+
     return results
 
 
@@ -184,54 +214,88 @@ def get_item(item_id):
 def batch_weight():
     filename = request.args.get("file")
     extension = filename.split(".")[-1]
-    match extension:
-        case "csv":
-            with open(f"in/{filename}", "r") as f:
-                lines = f.readlines()
-                header = lines[0].strip().split(",")
-                unit = header[1]
-                for line in lines[1:]:
-                    cid, weight = line.strip().split(",")
-                    db.session.add(
-                        Containers_registered(
-                            container_id=cid, weight=weight, unit=unit
-                        )
-                    )
 
-            db.session.commit()
-            return Response("Batch processed successfully", status=200)
-        case "json":
-            with open(f"in/{filename}", "r") as f:
-                data = json.load(f)
-            for entry in data:
-                cid = entry["id"]
-                weight = entry["weight"]
-                unit = entry["unit"]
+    def process_csv():
+        with open(f"in/{filename}", "r") as f:
+            lines = f.readlines()
+            unit = lines[0].strip().split(",")[1]
+            for line in lines[1:]:
+                cid, weight = line.strip().split(",")
                 db.session.add(
                     Containers_registered(container_id=cid, weight=weight, unit=unit)
                 )
-            db.session.commit()
-            return Response("Batch processed successfully", status=200)
 
-        case _:
-            return Response("Unsupported file format", status=400)
+    def process_json():
+        with open(f"in/{filename}", "r") as f:
+            data = json.load(f)
+        for entry in data:
+            db.session.add(
+                Containers_registered(
+                    container_id=entry["id"], weight=entry["weight"], unit=entry["unit"]
+                )
+            )
+
+    processors = {"csv": process_csv, "json": process_json}
+
+    if extension not in processors:
+        return Response("Unsupported file format", status=400)
+
+    processors[extension]()
+    db.session.commit()
+    return Response("Batch processed successfully", status=200)
 
 
 @app.route("/unknown", methods=["GET"])
 def unknown():
-    result = []
-    unknown_containers = (
-        db.session.query(Containers_registered.container_id)
-        .filter(Containers_registered.weight == "")
+    unknown_containers = [
+        c.container_id
+        for c in db.session.query(Containers_registered.container_id)
+        .filter(Containers_registered.weight.in_([0, ""]))
         .all()
-    )
-    for container in unknown_containers:
-        result.append(container.container_id)
-    if not result:
+    ]
+
+    if is_ui_mode():
+        return render_template("unknown.html", containers=unknown_containers)
+
+    # API mode
+    if not unknown_containers:
         return Response(
             "No unknown containers found", status=204, mimetype="text/plain"
         )
-    return Response(", ".join(result) + ",", status=200, mimetype="text/plain")
+
+    return Response(
+        ", ".join(unknown_containers) + ",", status=200, mimetype="text/plain"
+    )
+
+
+# UI routes
+@app.route("/", methods=["GET"])
+def home():
+    return render_template("home.html")
+
+
+@app.route("/ui/weight/new", methods=["GET"])
+def ui_weight_new():
+    return render_template("weight_new.html", result=None)
+
+
+@app.route("/ui/item", methods=["GET"])
+def ui_item():
+    return render_template(
+        "item.html",
+        results=None,
+        error=None,
+        item_id="",
+        raw_from="",
+        raw_to="",
+    )
+
+
+@app.route("/ui/session", methods=["GET"])
+def weighting_session():
+    # Placeholder route for weighing session UI
+    # TODO: Implement session logic
+    return render_template("session.html", sessions=None)
 
 
 if __name__ == "__main__":

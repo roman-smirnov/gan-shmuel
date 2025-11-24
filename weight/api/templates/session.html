@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Weighing Session{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('home') }}" class="btn btn-link px-0 mb-3">&larr; Back to dashboard</a>
+
+<h2 class="mb-3">Weighing Session</h2>
+
+<form action="{{ url_for('weighting_session') }}" method="get" class="row g-3">
+  <input type="hidden" name="ui" value="1">
+
+  <div class="col-md-6">
+    <label class="form-label">Session ID</label>
+    <input name="session_id" class="form-control" value="{{ request.args.get('session_id', '') }}" placeholder="Enter session ID">
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Truck License Plate</label>
+    <input name="truck" class="form-control" value="{{ request.args.get('truck', '') }}" placeholder="Enter truck number">
+  </div>
+
+  <div class="col-12">
+    <button class="btn btn-primary">Search</button>
+  </div>
+</form>
+
+{% if sessions is not none %}
+  <hr class="my-4">
+
+  {% if sessions %}
+    <h4>Session Results</h4>
+    <table class="table table-sm table-striped">
+      <thead>
+        <tr>
+          <th>Session ID</th>
+          <th>Transaction ID</th>
+          <th>Truck</th>
+          <th>Direction</th>
+          <th>Produce</th>
+          <th>Bruto</th>
+          <th>Neto</th>
+          <th>Date/Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for session in sessions %}
+          <tr>
+            <td>{{ session.session_id or "-" }}</td>
+            <td>{{ session.id }}</td>
+            <td>{{ session.truck }}</td>
+            <td>{{ session.direction }}</td>
+            <td>{{ session.produce }}</td>
+            <td>{{ session.bruto }}</td>
+            <td>{{ session.neto or "-" }}</td>
+            <td>{{ session.datetime.strftime('%Y-%m-%d %H:%M') if session.datetime else "-" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-muted">No sessions found. Please search by Session ID or Truck number.</p>
+  {% endif %}
+{% else %}
+  <div class="alert alert-info mt-4">
+    <strong>ℹ️ Coming Soon!</strong>
+    <p class="mb-0">This feature will allow you to view details of weighing sessions including all related transactions.</p>
+  </div>
+{% endif %}
+
+{% endblock %}
