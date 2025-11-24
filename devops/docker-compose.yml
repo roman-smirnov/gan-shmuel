@@ -1,9 +1,9 @@
 services:
-  devops-api:
+  devops-app:
     build:
       context: ..
       dockerfile: devops/api/Dockerfile
-    container_name: devops-api
+    container_name: devops-app
     ports:
       - "8081:5000"
     environment:
