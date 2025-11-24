@@ -77,38 +77,3 @@ def get_weight_data(from_date, to_date, filter_type='in'):
         raise ConnectionError("Weight service timed out")
     except requests.exceptions.HTTPError as e:
         raise Exception(f"Weight service error: {e.response.status_code}")
-
-
-def get_weight_data_mock(from_date, to_date, filter_type='in'):
-    """
-    Return mock data that simulates calling GET /weight + GET /session.
-    """
-    return [
-        {
-            'id': 1001,
-            'direction': 'in',
-            'truck': 'T-14409',      # From GET /session/1001
-            'bruto': 10000,
-            'neto': 8500,
-            'produce': 'Navel',
-            'containers': ['C-35434', 'C-73281']
-        },
-        {
-            'id': 1002,
-            'direction': 'in',
-            'truck': 'T-14409',
-            'bruto': 9500,
-            'neto': 7800,
-            'produce': 'Mandarin',
-            'containers': ['C-35537']
-        },
-        {
-            'id': 1003,
-            'direction': 'in',
-            'truck': 'T-16474',
-            'bruto': 11000,
-            'neto': 9200,
-            'produce': 'Navel',
-            'containers': ['C-49036', 'C-85957']
-        }
-    ]
