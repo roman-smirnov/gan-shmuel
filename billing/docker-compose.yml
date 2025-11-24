@@ -15,6 +15,7 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_PORT=${DB_PORT}
       - WEIGHT_BASE_URL=${WEIGHT_BASE_URL}
+      - PROD=${PROD}
     depends_on:
       billing-db:
         condition: service_healthy
