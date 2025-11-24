@@ -5,7 +5,7 @@ from .routes.provider import providers_bp
 from .routes.truck import trucks_bp
 from .routes.rates import rates_bp
 from .routes.ui import ui_bp
-
+from app.routes.ui_rates import ui_rates_bp
 '''from .routes.providers import providers_bp
 from .routes.bills import bills_bp'''
 
@@ -19,6 +19,7 @@ def create_app():
     app.register_blueprint(trucks_bp)
     app.register_blueprint(rates_bp)
     app.register_blueprint(ui_bp)
+    app.register_blueprint(ui_rates_bp)
     # app.register_blueprint(bills_bp)
 
     return app
