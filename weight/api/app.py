@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from flask import Flask, Response, request, render_template
+from flask import Flask, Response, request, render_template, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import secrets
 import os
@@ -9,9 +9,8 @@ import utils
 
 # Initialize Flask app and SQLAlchemy
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(
-    6
-)  # generate a random 12 characters in hexadecimal for secret key
+app.secret_key = secrets.token_hex(6)
+# generate a random 12 characters in hexadecimal for secret key
 
 # Configure the database connection
 db_user = os.getenv("MYSQL_USER")
@@ -112,45 +111,47 @@ def post_weight():
         last_row = rows[-1]
 
     new_row = Transactions()
-    new_row.produce = data["produce"]
-    new_row.bruto = int(data["weight"])
-    new_row.direction = data["direction"]
-    new_row.neto = None
-    new_row.truck = int(data["truck"])
-    new_row.containers = data["containers"]
+    new_row.produce = data.get("produce")
+    new_row.direction = data.get("direction")
+    new_row.truck = data.get("truck")
+    new_row.containers = data.get("containers")
     new_row.truckTara = None
-    utils.handle_session(
-        new_row, data["direction"], data["truck"]
-    )  # handle the sessions
+    new_row.neto = None
+    force = data.get("force")
+    unit = data.get("unit")
+    if unit == "kg":
+        new_row.bruto = int(data.get("weight"))
+    else:
+        new_row.bruto = utils.convert_lbs_to_kg(data.get("weight"))
+
+    utils.handle_session(new_row, new_row.direction, data["truck"])  # handle the sessions
     if last_row:  # check if the last row exist
+
         if last_row.direction == "in" and new_row.direction == "out":
+            # handle the situation truck -> in -> out
             containers_weight = utils.calc_containers_weight(new_row.containers)
-            if containers_weight:
+            if containers_weight or len(new_row.containers) == 0:
                 new_row.truckTara = new_row.bruto - utils.calc_containers_weight(
                     new_row.containers
                 )
                 neto = utils.calc_neto_fruit(
-                    int(last_row.bruto), new_row.truckTara, data["containers"]
+                    int(last_row.bruto), new_row.truckTara, new_row.containers
                 )
                 new_row.neto = neto
 
-        if (last_row.direction == "in" and last_row.direction == new_row.direction) or (
-            last_row.direction == "out" and last_row.direction == new_row.direction
-        ):
-            if not data["force"]:
-                raise Exception(
-                    f"truck already {last_row.direction} use force True to update"
-                )
-            elif data["force"] == "True":
-                # UI mode for force update
+        if (last_row.direction == new_row.direction
+                or {last_row.direction, new_row.direction} == {None, "in"}):
+            # handles situation that new_record conflicts with old, truck is in and tries to enter again
+            if force == "True":
+                utils.update_row(last_row, new_row)
                 if is_ui_mode():
-                    return render_template(
-                        "weight_new.html", result=utils.verbose(last_row)
-                    )
-            else:
-                raise Exception(
-                    f"truck already {last_row.direction} use force True to update"
-                )
+                    return render_template("weight_new.html", result=utils.verbose(last_row))
+                return utils.verbose(last_row)
+
+            abort(409, description=f"truck already {last_row.direction} use force=True to update")
+    elif new_row.direction == "out":
+       # handle situation that a truck that isn't in trying to leave
+       abort(409, description=f"truck isn't in {new_row.direction} use force=True to update")
 
     db.session.add(new_row)
     db.session.commit()
@@ -158,6 +159,8 @@ def post_weight():
     # UI mode (form from weight_new.html)
     if is_ui_mode():
         return render_template("weight_new.html", result=utils.verbose(new_row))
+    
+    return utils.verbose(new_row)
 
 
 @app.route("/item/<item_id>", methods=["GET"])
@@ -244,6 +247,33 @@ def batch_weight():
     db.session.commit()
     return Response("Batch processed successfully", status=200)
 
+@app.route("/session/<id>", methods=["GET"])
+def get_session(id):
+    
+    rows = transactions.query.filter(
+    transactions.id == id
+    ).all()
+
+    if not rows:
+        return jsonify({"error": "session not found"}), 404
+
+    out_row = next((r for r in rows if r.direction == "out"), None)
+
+    if out_row:
+        return jsonify({
+            "id": str(out_row.id),
+            "truck": out_row.truck if out_row.truck else "na",
+            "bruto": out_row.bruto,
+            "truckTara": out_row.truckTara if out_row.truckTara is not None else "na",
+            "neto": out_row.neto if out_row.neto is not None else "na" 
+        }), 200
+
+    in_row = rows[0]
+    return jsonify({
+        "id": str(in_row.id),
+        "truck": in_row.truck if in_row.truck else "na",
+        "bruto": in_row.bruto
+    }), 200
 
 @app.route("/unknown", methods=["GET"])
 def unknown():
@@ -253,7 +283,6 @@ def unknown():
         .filter(Containers_registered.weight.in_([0, ""]))
         .all()
     ]
-
     if is_ui_mode():
         return render_template("unknown.html", containers=unknown_containers)
 
@@ -296,7 +325,6 @@ def weighting_session():
     # Placeholder route for weighing session UI
     # TODO: Implement session logic
     return render_template("session.html", sessions=None)
-
 
 if __name__ == "__main__":
     with app.app_context():

@@ -1,6 +1,6 @@
 import secrets
-from datetime import datetime
-from flask import session
+from datetime import datetime 
+from flask import session, abort
 
 
 # dependencies to be injected from app.py
@@ -18,16 +18,17 @@ def calc_containers_weight(containers):
     # the function return the total weight of the containers or na if there was an issue
 
     total_weight = 0
+
+    if not containers: #check if there are no containers
+        return total_weight
     try:
-        id_list = [
-            int(i) for i in containers.split(",")
-        ]  # creates a list of id from the containers
+        id_list = containers.split(",") # creates a list of id from the containers
         results = (
             db.session.query(Containers_registered.weight, Containers_registered.unit)
             .filter(Containers_registered.container_id.in_(id_list))
             .all()
         )  # get list of tuples with all container weight
-        if len(results) < len(id_list):
+        if len(results) < len(id_list): #check if less containers returned than the amount sent
             return None
         for value in results:  # loops on all list
             if value[1] == "kg":
@@ -44,7 +45,7 @@ def calc_neto_fruit(bruto_weight, truckTara, containers):
     # this functions receives a bruto weight, truck tara and a list(string separated by ",") of containers
     # and returns the neto weight by the following calculation neto = brutu - truck tara - containers_tara
     container_weight = calc_containers_weight(containers)
-    if container_weight:
+    if container_weight or len(containers) == 0:
         return bruto_weight - (int(truckTara) + container_weight)
 
     else:
