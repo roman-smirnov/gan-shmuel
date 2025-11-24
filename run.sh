@@ -82,7 +82,7 @@ set_mode_env() {
       export DEVOPS_PORT=8084
       export WEIGHT_PORT=8085
       export BILLING_PORT=8086
-      export WEIGHT_MYSQL_PORT=3038
+      export WEIGHT_MYSQL_PORT=3456
       ;;
     *)
       error "invalid mode: $mode"
