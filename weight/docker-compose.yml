@@ -5,11 +5,13 @@ services:
     image: mysql:9.0.1
     env_file:
       - .env
+    environment:
+      - MYSQL_TCP_PORT=${WEIGHT_MYSQL_PORT}
     volumes:
       - db-data:/var/lib/mysql
       - ./db/weight_db.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "3306:3306"
+      - "${WEIGHT_MYSQL_PORT}:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       timeout: 20s

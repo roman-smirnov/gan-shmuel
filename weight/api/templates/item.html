@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Search by Item{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('home') }}" class="btn btn-link px-0 mb-3">&larr; Back to dashboard</a>
+
+<h2 class="mb-3">Search transactions by item</h2>
+
+<form id="itemSearchForm" method="get" class="row g-3">
+  <!-- Force UI mode -->
+  <input type="hidden" name="ui" value="1">
+
+  <div class="col-md-4">
+    <label class="form-label">Item / Produce ID</label>
+    <input id="itemIdInput" name="item_id" class="form-control" value="{{ item_id or '' }}" required>
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">From (YYYYMMDDhhmmss)</label>
+    <input name="from" class="form-control" value="{{ raw_from or '' }}">
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">To (YYYYMMDDhhmmss)</label>
+    <input name="to" class="form-control" value="{{ raw_to or '' }}">
+  </div>
+
+  <div class="col-12">
+    <button type="submit" class="btn btn-primary">Search</button>
+  </div>
+</form>
+
+<script>
+document.getElementById('itemSearchForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const itemId = document.getElementById('itemIdInput').value;
+  const fromDate = this.querySelector('input[name="from"]').value;
+  const toDate = this.querySelector('input[name="to"]').value;
+  
+  let url = `/item/${encodeURIComponent(itemId)}?ui=1`;
+  if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
+  if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
+  
+  window.location.href = url;
+});
+</script>
+
+{% if error %}
+  <div class="alert alert-warning mt-4">{{ error }}</div>
+{% endif %}
+
+{% if results is not none %}
+  <hr class="my-4">
+
+  {% if results %}
+    <h4>Results for "{{ item_id }}"</h4>
+    <table class="table table-sm table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Truck Tara</th>
+          <th>Session ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in results %}
+          <tr>
+            <td>{{ t.id }}</td>
+            <td>{{ t.truckTara or "-" }}</td>
+            <td>{{ t.session_id or "-" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% elif not error %}
+    <p class="text-muted mb-0">No transactions found for this filter.</p>
+  {% endif %}
+{% endif %}
+{% endblock %}

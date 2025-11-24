@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Weight Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Dashboard</h2>
+
+<div class="row g-3">
+  <div class="col-md-4">
+    <a href="{{ url_for('ui_weight_new') }}" class="text-decoration-none">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">New Weight</h5>
+          <p class="card-text text-muted">
+            Create a new weight transaction.
+          </p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-4">
+    <a href="{{ url_for('get_weight') }}?ui=1" class="text-decoration-none">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Search Weights</h5>
+          <p class="card-text text-muted">
+            Filter existing transactions by date and direction.
+          </p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-4">
+    <a href="{{ url_for('ui_item') }}?ui=1" class="text-decoration-none">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Search Items</h5>
+          <p class="card-text text-muted">
+            View weight history for a specific produce.
+          </p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+
+    <div class="col-md-4">
+    <a href="{{ url_for('weighting_session') }}?ui=1" class="text-decoration-none">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Weighing Session</h5>
+          <p class="card-text text-muted">
+            view details of a specific weighing session.
+          </p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+
+
+
+  <div class="col-md-4">
+    <a href="{{ url_for('unknown') }}?ui=1" class="text-decoration-none">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Unknown Containers</h5>
+          <p class="card-text text-muted">
+            Show containers without recorded weights.
+          </p>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+{% endblock %}
