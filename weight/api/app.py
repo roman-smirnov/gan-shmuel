@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from flask import Flask, Response, request
+from flask import Flask, Response, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import secrets
 import os
@@ -102,40 +102,45 @@ def post_weight():
         last_row = rows[-1]
 
     new_row = Transactions()
-    new_row.produce = data["produce"]
-    new_row.bruto = int(data["weight"])
-    new_row.direction = data["direction"]
-    new_row.neto = None
-    new_row.truck = int(data["truck"])
-    new_row.containers = data["containers"]
+    new_row.produce = data.get("produce")
+    new_row.direction = data.get("direction")
+    new_row.truck = data.get("truck")
+    new_row.containers = data.get("containers")
     new_row.truckTara = None
-    utils.handle_session(new_row, data["direction"], data["truck"])  # handle the sessions
+    new_row.neto = None
+    force = data.get("force")
+    unit = data.get("unit")
+    if unit == "kg":
+        new_row.bruto = int(data.get("weight"))
+    else:
+        new_row.bruto = utils.convert_lbs_to_kg(data.get("weight"))
+
+    utils.handle_session(new_row, new_row.direction, data["truck"])  # handle the sessions
     if last_row:  # check if the last row exist
+
         if last_row.direction == "in" and new_row.direction == "out":
+            # handle the situation truck -> in -> out
             containers_weight = utils.calc_containers_weight(new_row.containers)
-            if containers_weight:
+            if containers_weight or len(new_row.containers) == 0:
                 new_row.truckTara = new_row.bruto - utils.calc_containers_weight(
                     new_row.containers
                 )
                 neto = utils.calc_neto_fruit(
-                    int(last_row.bruto), new_row.truckTara, data["containers"]
+                    int(last_row.bruto), new_row.truckTara, new_row.containers
                 )
                 new_row.neto = neto
 
-        if (last_row.direction == "in" and last_row.direction == new_row.direction) or (
-            last_row.direction == "out" and last_row.direction == new_row.direction
-        ):
-            if not data["force"]:
-                raise Exception(
-                    f"truck already {last_row.direction} use force True to update"
-                )
-            elif data["force"] == "True":
+        if (last_row.direction == new_row.direction
+                or {last_row.direction, new_row.direction} == {None, "in"}):
+            # handles situation that new_record conflicts with old, truck is in and tries to enter again
+            if force == "True":
                 utils.update_row(last_row, new_row)
                 return utils.verbose(last_row)
-            else:
-                raise Exception(
-                    f"truck already {last_row.direction} use force True to update"
-                )
+
+            abort(409, description=f"truck already {last_row.direction} use force=True to update")
+    elif new_row.direction == "out":
+       # handle situation that a truck that isn't in trying to leave
+       abort(409, description=f"truck isn't in {new_row.direction} use force=True to update")
 
     db.session.add(new_row)
     db.session.commit()
@@ -232,7 +237,6 @@ def unknown():
             "No unknown containers found", status=204, mimetype="text/plain"
         )
     return Response(", ".join(result) + ",", status=200, mimetype="text/plain")
-
 
 if __name__ == "__main__":
     with app.app_context():
