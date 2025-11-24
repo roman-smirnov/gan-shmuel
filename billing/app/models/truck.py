@@ -1,5 +1,5 @@
 from app.utils import get_db_connection
-# from app.services.weight_client import get_item_from_weight
+from app.services.weight_client import get_item_from_weight
 
 def create_truck(truck_id, provider_id):
     """
@@ -74,22 +74,20 @@ def get_trucks_by_provider(provider_id):
     conn.close()
     
     return trucks
-
-# ToDo: depends on weight team
-# def get_truck_sessions(truck_id, from_date, to_date):
-#     """
-#     Get truck's tara weight and weighing sessions from Weight service.
-#     """
-#     try:
-#         # Call Weight service's GET /item/<id> endpoint
-#         item_data = get_item_from_weight(truck_id, from_date, to_date)
-#         return {
-#             'tara': item_data.get('tara', 'na'),
-#             'session_ids': item_data.get('sessions', [])
-#         }
-#     except Exception:
-#         # Weight service unavailable or error
-#         return {
-#             'tara': 'na',
-#             'session_ids': []
-#         }
+def get_truck_sessions(truck_id, from_date, to_date):
+    """
+    Get truck's tara weight and weighing sessions from Weight service.
+    """
+    try:
+        item_data = get_item_from_weight(truck_id, from_date, to_date)
+        return {
+            'tara': item_data.get('tara', 'na'),
+            'session_ids': item_data.get('sessions', [])
+        }
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error calling weight service for truck {truck_id}: {type(e).__name__}: {str(e)}")
+        return {
+            'tara': 'na',
+            'session_ids': []
+        }

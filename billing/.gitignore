@@ -6,6 +6,7 @@ __pycache__/
 .Python
 venv/
 ENV/
+.venv/
 
 # Environment
 .env
@@ -34,3 +35,6 @@ in/*.csv
 
 # Docker
 *.log
+
+# Excel
+*.xlsx

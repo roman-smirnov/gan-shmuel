@@ -1,8 +1,3 @@
-# =============================================================================
-# RATE PARSER SERVICE
-# =============================================================================
-# Parses rate files (xlsx) and converts them to database-ready format.
-
 import pandas as pd
 
 def parse_rates_file(filepath):
