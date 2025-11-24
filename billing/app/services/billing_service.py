@@ -1,8 +1,3 @@
-# =============================================================================
-# BILLING SERVICE
-# =============================================================================
-# Core business logic for calculating provider bills.
-
 from datetime import datetime
 from app.models.provider import get_provider
 from app.models.truck import get_trucks_by_provider
@@ -33,8 +28,6 @@ def calculate_bill(provider_id, from_date=None, to_date=None):
     
     # Get provider info
     provider = get_provider(provider_id)
-    if not provider:
-        raise ValueError(f"Provider {provider_id} not found")
     
     # Get all trucks belonging to this provider
     trucks = get_trucks_by_provider(provider_id)
@@ -45,6 +38,7 @@ def calculate_bill(provider_id, from_date=None, to_date=None):
 
     weight_data = get_weight_data_mock(from_date, to_date, filter_type='in')
     
+    
     # Filter for this provider's trucks only
     provider_sessions = [
         session for session in weight_data
@@ -54,6 +48,7 @@ def calculate_bill(provider_id, from_date=None, to_date=None):
     # Calculate totals per product
     products = {}
     
+
     for session in provider_sessions:
         produce = session.get('produce', 'Unknown')
         neto = session.get('neto')
@@ -85,7 +80,7 @@ def calculate_bill(provider_id, from_date=None, to_date=None):
     # Build product list with payment calculations
     product_list = []
     total = 0
-    
+
     for produce, data in products.items():
         pay = data['amount'] * data['rate']
         total += pay

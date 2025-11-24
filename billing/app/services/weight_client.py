@@ -18,6 +18,8 @@ def get_item_from_weight(truck_id, from_date, to_date):
     resp.raise_for_status()  
 
     return resp.json()
+
+
 def get_weight_data(from_date, to_date, filter_type='in'):
     """
     Fetch weighing data from Weight service with truck info.
@@ -83,7 +85,7 @@ def get_weight_data_mock(from_date, to_date, filter_type='in'):
     """
     return [
         {
-            'id': 10001,
+            'id': 1001,
             'direction': 'in',
             'truck': 'T-14409',      # From GET /session/1001
             'bruto': 10000,
