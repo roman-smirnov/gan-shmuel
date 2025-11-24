@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gan Shmuel - Billing UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .messages {
+            margin-bottom: 15px;
+        }
+
+        .error {
+            color: #b00020;
+        }
+
+        .success {
+            color: #006400;
+        }
+
+        .section {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            text-align: left;
+        }
+
+        table th {
+            background-color: #f5f5f5;
+        }
+
+        label {
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        input[type="text"] {
+            padding: 4px 6px;
+            margin-right: 6px;
+        }
+
+        button {
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Gan Shmuel - Billing UI</h1>
+    <p>Simple admin UI for Billing service (Providers only for now)</p>
+
+    <div class="messages">
+        {% if error_message %}
+            <div class="error">{{ error_message }}</div>
+        {% endif %}
+        {% if success_message %}
+            <div class="success">{{ success_message }}</div>
+        {% endif %}
+    </div>
+
+    <!-- Providers Section -->
+    <div class="section">
+        <h2>Providers</h2>
+
+        <!-- INPUT: Create Provider Form -->
+        <form method="post">
+            <input type="hidden" name="form_type" value="provider">
+            <label for="name">Provider name:</label>
+            <input type="text" id="name" name="name" placeholder="Enter provider name">
+            <button type="submit">Create Provider</button>
+        </form>
+
+        <!-- OUTPUT: Providers Table -->
+        <h3>Existing Providers</h3>
+        {% if providers and providers|length > 0 %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for provider in providers %}
+                        <tr>
+                            <td>{{ provider.id }}</td>
+                            <td>{{ provider.name }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No providers found.</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>
+
