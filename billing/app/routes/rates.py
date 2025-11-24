@@ -1,8 +1,9 @@
 
-from flask import Blueprint, jsonify, request, send_file, current_app
+from flask import Blueprint, jsonify, request, send_file, current_app, send_file
 import os
 from app.services.rate_parser import parse_rates_file
-from app.models.rate import save_rates, get_all_rates
+from app.models.rate import save_rates, get_all_rates , get_all_rates
+from openpyxl import Workbook
 
 rates_bp = Blueprint("rates", __name__) 
 
@@ -48,3 +49,69 @@ def post_rates():
     except Exception as e:
         # Unexpected error
         return jsonify({'error': f'Failed to process file: {str(e)}'}), 500
+
+
+
+
+
+@rates_bp.get("/rates")  # GET /rates
+def get_rates():
+    """
+    GET /rates
+    1. Fetch all rates from the database
+    2. If DB is empty → return 404
+    3. Otherwise: generate an Excel (.xlsx) file under /app/in
+    4. Return the Excel file for download
+    """
+
+    # 1) Try to fetch data from DB
+    try:
+        rates = get_all_rates()
+    except Exception as e:
+        # Log the error on the server side (for debugging)
+        current_app.logger.exception("Failed to fetch rates from database")
+        # Return generic error message to the client (no internal details)
+        return jsonify({"error": "Failed to load rates from database"}), 500
+
+    # 2) Handle case: no rates in DB
+    if not rates:
+        return jsonify({
+            "error": "No rates found in the database.",
+            "message": "Please upload rates first using POST /rates."
+        }), 404
+
+    # 3) Build a safe file path for the Excel file
+    file_path = os.path.join("/app", "in", "rates.xlsx")
+
+    # Make sure the directory exists (extra safety)
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+    # 4) Generate the Excel file
+    try:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Rates"
+
+        # Header row
+        headers = ["product_id", "rate", "scope"]
+        ws.append(headers)
+
+        # Data rows from DB
+        for row in rates:
+            ws.append([row["product_id"], row["rate"], row["scope"]])
+
+        # Save the workbook to disk
+        wb.save(file_path)
+
+    except Exception as e:
+        current_app.logger.exception("Failed to generate Excel file for rates")
+        return jsonify({"error": "Failed to generate Excel file"}), 500
+
+    # 5) Return the Excel file as a download to the client
+    return send_file(
+        file_path,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name="rates.xlsx",
+    )
+
