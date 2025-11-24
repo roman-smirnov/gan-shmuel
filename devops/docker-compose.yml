@@ -8,6 +8,7 @@ services:
       - "8081:5000"
     environment:
       - FLASK_ENV=development
+      - PROJECT_ROOT=${PROJECT_ROOT}  
     volumes:
-      - ..:/devops-app
+       - ${PROJECT_ROOT}:${PROJECT_ROOT}
       - /var/run/docker.sock:/var/run/docker.sock
