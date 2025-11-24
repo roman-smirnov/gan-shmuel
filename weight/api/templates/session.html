@@ -28,7 +28,7 @@
   <hr class="my-4">
 
   {% if sessions %}
-    <h4>Session Results</h4>
+    <h4>Session Results ({{ sessions|length }} found)</h4>
     <table class="table table-sm table-striped">
       <thead>
         <tr>
@@ -40,18 +40,33 @@
           <th>Bruto</th>
           <th>Neto</th>
           <th>Date/Time</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for session in sessions %}
           <tr>
-            <td>{{ session.session_id or "-" }}</td>
+            <td>
+              {% if session.session_id %}
+                <a href="{{ url_for('get_session', id=session.session_id) }}?ui=1" class="text-decoration-none">
+                  {{ session.session_id }}
+                </a>
+              {% else %}
+                -
+              {% endif %}
+            </td>
             <td>{{ session.id }}</td>
             <td>{{ session.truck }}</td>
-            <td>{{ session.direction }}</td>
+            <td>
+              <span class="badge {% if session.direction == 'in' %}bg-success{% elif session.direction == 'out' %}bg-warning{% else %}bg-secondary{% endif %}">
+                {{ session.direction }}
+              </span>
+            </td>
             <td>{{ session.produce }}</td>
-            <td>{{ session.bruto }}</td>
-            <td>{{ session.neto or "-" }}</td>
+            <td>{{ session.bruto }} kg</td>
+            <td>{{ session.neto or "-" }} kg</td>
+            <td>{{ session.truckTara or "-" }} kg</td>
+            <td class="text-truncate" style="max-width: 200px;">{{ session.containers or "-" }}</td>
             <td>{{ session.datetime.strftime('%Y-%m-%d %H:%M') if session.datetime else "-" }}</td>
           </tr>
         {% endfor %}
@@ -60,11 +75,6 @@
   {% else %}
     <p class="text-muted">No sessions found. Please search by Session ID or Truck number.</p>
   {% endif %}
-{% else %}
-  <div class="alert alert-info mt-4">
-    <strong>ℹ️ Coming Soon!</strong>
-    <p class="mb-0">This feature will allow you to view details of weighing sessions including all related transactions.</p>
-  </div>
 {% endif %}
 
 {% endblock %}

@@ -16,8 +16,9 @@ app.secret_key = secrets.token_hex(6)
 db_user = os.getenv("MYSQL_USER")
 db_pass = os.getenv("MYSQL_PASSWORD")
 db_name = os.getenv("MYSQL_DATABASE")
+db_port = os.getenv("WEIGHT_MYSQL_PORT")
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    f"mysql+pymysql://{db_user}:{db_pass}@weight-db:3306/{db_name}"
+    f"mysql+pymysql://{db_user}:{db_pass}@weight-db:{db_port}/{db_name}"
 )
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -267,13 +268,18 @@ def get_session(id):
             "truckTara": out_row.truckTara if out_row.truckTara is not None else "na",
             "neto": out_row.neto if out_row.neto is not None else "na" 
         }), 200
-
-    in_row = rows[0]
-    return jsonify({
-        "id": str(in_row.id),
-        "truck": in_row.truck if in_row.truck else "na",
-        "bruto": in_row.bruto
-    }), 200
+    else:
+        in_row = rows[0]
+        result = {
+            "id": str(in_row.id),
+            "truck": in_row.truck if in_row.truck else "na",
+            "bruto": in_row.bruto
+        }
+    
+    if is_ui_mode():
+        return render_template("session_details.html", session=out_row or rows[0], error=None)
+    
+    return jsonify(result), 200
 
 @app.route("/unknown", methods=["GET"])
 def unknown():
@@ -319,12 +325,21 @@ def ui_item():
         raw_to="",
     )
 
-
 @app.route("/ui/session", methods=["GET"])
 def weighting_session():
-    # Placeholder route for weighing session UI
-    # TODO: Implement session logic
-    return render_template("session.html", sessions=None)
+    session_id = request.args.get("session_id")
+    truck = request.args.get("truck")
+    
+    sessions = None
+    
+    if session_id:
+        # Search by session ID
+        sessions = Transactions.query.filter(Transactions.session_id == session_id).all()
+    elif truck:
+        # Search by truck
+        sessions = Transactions.query.filter(Transactions.truck == truck).order_by(Transactions.datetime.desc()).all()
+    
+    return render_template("session.html", sessions=sessions)
 
 if __name__ == "__main__":
     with app.app_context():
