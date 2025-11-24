@@ -1,17 +1,18 @@
 from datetime import datetime, timezone
 from flask import Flask, Response, request, abort, jsonify
+
 from flask_sqlalchemy import SQLAlchemy
 import secrets
 import os
 import json
 import utils
+
     
 
 # Initialize Flask app and SQLAlchemy
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(
-    6
-)  # generate a random 12 characters in hexadecimal for secret key
+app.secret_key = secrets.token_hex(6)
+# generate a random 12 characters in hexadecimal for secret key
 
 # Configure the database connection
 db_user = os.getenv("MYSQL_USER")
@@ -221,6 +222,35 @@ def batch_weight():
         case _:
             return Response("Unsupported file format", status=400)
 
+@app.route("/session/<id>", methods=["GET"])
+def get_session(id):
+    
+    rows = transactions.query.filter(
+    transactions.id == id
+    ).all()
+
+    if not rows:
+        
+        return jsonify({"error": "session not found"}), 404
+
+    out_row = next((r for r in rows if r.direction == "out"), None)
+
+    if out_row:
+        return jsonify({
+            "id": str(out_row.id),
+            
+            "truck": out_row.truck if out_row.truck else "na",
+            "bruto": out_row.bruto,
+            "truckTara": out_row.truckTara if out_row.truckTara is not None else "na",
+            "neto": out_row.neto if out_row.neto is not None else "na" 
+        }), 200
+
+    in_row = rows[0]
+    return jsonify({
+        "id": str(in_row.id),
+        "truck": in_row.truck if in_row.truck else "na",
+        "bruto": in_row.bruto
+    }), 200
 
 @app.route("/unknown", methods=["GET"])
 def unknown():
