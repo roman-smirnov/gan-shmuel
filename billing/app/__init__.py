@@ -16,6 +16,7 @@ def create_app():
     app.register_blueprint(providers_bp)
     app.register_blueprint(trucks_bp)
     app.register_blueprint(rates_bp)
+    app.register_blueprint(ui_bp)
     # app.register_blueprint(bills_bp)
 
     return app
