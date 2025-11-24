@@ -1,18 +1,15 @@
 from flask import Blueprint
+from flask import current_app
 import socket
 import os
 
 # Create Blueprint for health routes
 health_bp = Blueprint("health", __name__)
 
-# Load environment variables (with defaults)
-MYSQL_HOST = os.getenv("DB_HOST", "localhost")
-MYSQL_PORT = int(os.getenv("DB_PORT", "3306"))
-
 
 def check_mysql_alive() -> bool:
     try:
-        with socket.create_connection((MYSQL_HOST, MYSQL_PORT), timeout=1):
+        with socket.create_connection((current_app.config['DB_HOST'], current_app.config['DB_PORT']), timeout=1):
             return True
     except OSError:
         return False
