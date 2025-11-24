@@ -23,10 +23,7 @@ def cleanup_database():
     """Clean database tables."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM Trucks")
     cursor.execute("DELETE FROM Rates")
-    cursor.execute("DELETE FROM Provider")
-    cursor.execute("ALTER TABLE Provider AUTO_INCREMENT = 10001")
     conn.commit()
     cursor.close()
     conn.close()
@@ -35,7 +32,7 @@ def cleanup_database():
 # ================================
 # POST /rates – tests
 # ================================
-
+#checking POST rate is working- 
 def test_post_rates_success(client, monkeypatch):
     """Valid file + valid data → should save 3 rows in DB."""
 
@@ -43,7 +40,7 @@ def test_post_rates_success(client, monkeypatch):
 
     def fake_parse(filepath):
         return [
-            {"product_id": "1", "rate": 50, "scope": "ALL"},
+            {"product_id": "333", "rate": 50, "scope": "ALL"},
             {"product_id": "1", "rate": 70, "scope": "10001"},
             {"product_id": "2", "rate": 40, "scope": "ALL"},
         ]
@@ -138,4 +135,3 @@ def test_get_rates_returns_200_when_db_has_data(client):
 
     # 3) Only check status code
     assert response.status_code == 200
-
