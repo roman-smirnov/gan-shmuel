@@ -1,156 +1,61 @@
 import os
-import yaml
+import subprocess
+import os
 import subprocess
 
-def clean_deploy():
-    BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
-    BILLING_COMPOSE = os.path.join(BASE, "billing/docker-compose.yml")
-    WEIGHT_COMPOSE  = os.path.join(BASE, "weight/docker-compose.yml")
-    subprocess.run([
-        "docker", "compose",
-        "-f", BILLING_COMPOSE,
-        "-f", WEIGHT_COMPOSE,
-        "up", "-d"
-    ], check=True)
+def test_deploy():
+    all_tests_passed = True
 
+    run_script = "run.sh"
 
+    try:
+        if os.path.isfile(run_script):
+            print("run.sh found — starting TEST stack…")
 
+            # Start test stack: build + test mode
+            subprocess.run(["bash", "run.sh", "-b", "-t"], check=True)
 
-def update_compose_with_shared_network(
-    compose_path,
-    output_dir,
-    output_filename="compose-test.yml",
-    shared_network="shared-devops-network"
-):
-    """
-    Loads ONE docker-compose file,
-    attaches all services to an EXTERNAL shared network,
-    fixes build paths,
-    fixes env_file paths,
-    and writes the new compose file into BASE/devops.
-    """
+            # --- BILLING TESTS ---
+            print("Running billing tests…")
+            try:
+                subprocess.run(["pytest", "billing/tests", "-q"], check=True)
+                print("Billing tests PASSED!")
+            except subprocess.CalledProcessError:
+                print("Billing tests FAILED!")
+                all_tests_passed = False
 
-    # Make sure output directory exists
-    os.makedirs(output_dir, exist_ok=True)
+            # --- WEIGHT TESTS ---
+            print("Running weight tests…")
+            try:
+                subprocess.run(["pytest", "weight/tests", "-q"], check=True)
+                print("Weight tests PASSED!")
+            except subprocess.CalledProcessError:
+                print("Weight tests FAILED!")
+                all_tests_passed = False
 
-    # Load compose
-    with open(compose_path, "r") as f:
-        compose_data = yaml.safe_load(f)
+        else:
+            print("run.sh not found — skipping execution.")
+            return False
 
-    # Original compose location (billing/ or weight/)
-    original_dir = os.path.dirname(compose_path)
+    except Exception as e:
+        print(f"Error during test deploy: {e}")
+        return False
 
-    # Ensure networks section exists
-    if "networks" not in compose_data:
-        compose_data["networks"] = {}
-
-    # Add EXTERNAL network (correct way for multi-compose interconnection)
-    compose_data["networks"][shared_network] = {
-        "external": True
-    }
-
-    # Update each service
-    for _, service in compose_data.get("services", {}).items():
-
-        # -------------------------------------------------------------
-        # Attach service to shared network
-        # -------------------------------------------------------------
-        if "networks" not in service:
-            service["networks"] = []
-        if shared_network not in service["networks"]:
-            service["networks"].append(shared_network)
-
-        # -------------------------------------------------------------
-        # Fix relative build paths
-        # -------------------------------------------------------------
-        if "build" in service:
-            build_setting = service["build"]
-
-            # Case: build: { context: "api" }
-            if isinstance(build_setting, dict) and "context" in build_setting:
-                new_context = os.path.relpath(
-                    os.path.join(original_dir, build_setting["context"]),
-                    output_dir
-                )
-                build_setting["context"] = new_context
-
-            # Case: build: "api"
-            elif isinstance(build_setting, str):
-                new_context = os.path.relpath(
-                    os.path.join(original_dir, build_setting),
-                    output_dir
-                )
-                service["build"] = new_context
-
-        # -------------------------------------------------------------
-        # NEW: Fix env_file paths
-        # -------------------------------------------------------------
-        if "env_file" in service:
-            fixed_env_paths = []
-
-            for env_path in service["env_file"]:
-                # Convert paths like ".env" to "../billing/.env" or "../weight/.env"
-                new_env_path = os.path.relpath(
-                    os.path.join(original_dir, env_path),
-                    output_dir
-                )
-                fixed_env_paths.append(new_env_path)
-
-            service["env_file"] = fixed_env_paths
-
-    # Output path
-    output_path = os.path.join(output_dir, output_filename)
-
-    # Write updated compose
-    with open(output_path, "w") as f:
-        yaml.dump(compose_data, f, sort_keys=False)
-
-    print(f"✔ Created: {output_path}")
-
-
+    return all_tests_passed
 
 def deploy():
-    BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
-    BILLING_COMPOSE = os.path.join(BASE, "billing/docker-compose.yml")
-    WEIGHT_COMPOSE  = os.path.join(BASE, "weight/docker-compose.yml")
-    DEVOPS_DIR      = os.path.join(BASE, "devops")
-    SHARED_NETWORK  = "shared-devops-network"
+    run_script = "run.sh"
 
-    # 1. Ensure network exists
-    subprocess.run(
-        ["docker", "network", "create", SHARED_NETWORK],
-        check=False
-    )
+    if not os.path.isfile(run_script):
+        print("run.sh not found — cannot deploy.")
+        return False
 
-    # 2. Rewrite compose files
-    update_compose_with_shared_network(
-        compose_path=BILLING_COMPOSE,
-        output_dir=DEVOPS_DIR,
-        output_filename="compose-billing.yml",
-        shared_network=SHARED_NETWORK
-    )
+    print("Deploying PRODUCTION stack…")
 
-    update_compose_with_shared_network(
-        compose_path=WEIGHT_COMPOSE,
-        output_dir=DEVOPS_DIR,
-        output_filename="compose-weight.yml",
-        shared_network=SHARED_NETWORK
-    )
-
-    billing_output = os.path.join(DEVOPS_DIR, "compose-billing.yml")
-    weight_output  = os.path.join(DEVOPS_DIR, "compose-weight.yml")
-
-    # 3. Deploy isolated stacks
-    subprocess.run(
-        ["docker", "compose", "-p", "billing",
-         "-f", billing_output, "up", "--build", "-d"],
-        check=True
-    )
-
-    subprocess.run(
-        ["docker", "compose", "-p", "weight",
-         "-f", weight_output, "up", "--build", "-d"],
-        check=True
-    )
-
-    print("Deployment completed successfully")
+    try:
+        subprocess.run(["bash", "run.sh", "-b", "-p"], check=True)
+        print("Production deployment finished successfully!")
+        return True
+    except subprocess.CalledProcessError:
+        print("Production deploy FAILED!")
+        return False

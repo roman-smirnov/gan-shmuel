@@ -14,17 +14,38 @@ def git_clone():
 
 def git_pull():
     subprocess.run(["git", "-C", REPO_PATH, "fetch", "--all"], check=True)
-    subprocess.run(["git", "-C", REPO_PATH, "checkout", "master"], check=True)
+    print("pulling latest changes...")
+    subprocess.run(["git", "-C", REPO_PATH, "checkout", "development"], check=True)
     subprocess.run(["git", "-C", REPO_PATH, "reset", "--hard", "origin/master"], check=True)
 
 def update_repo():
     if repo_exists():
         print("Repo exists → pulling...")
-        git_pull()
+        try:
+            git_pull()
+            print("Pull successful.")
+        except Exception as e:
+            print(f"Pull failed: {e}. Trying to reclone...")
+            git_clone()
     else:
         print("Repo missing → cloning...")
         git_clone()
 
+
+def change_to_project_root():
+    """Change working directory to the path defined in PROJECT_ROOT env variable."""
+    project_root = os.environ.get("PROJECT_ROOT")
+
+    if not project_root:
+        raise RuntimeError("❌ PROJECT_ROOT environment variable is not set")
+
+    try:
+        os.chdir(project_root)
+        print(f"📂 Changed working directory to: {project_root}")
+        print(f"📌 Current CWD: {os.getcwd()}")
+    except Exception as e:
+        raise RuntimeError(f"❌ Failed to change directory: {e}")
+    
 
 # --- Signature verification helper ---
 def verify_signature(request):

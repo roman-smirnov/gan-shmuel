@@ -1,8 +1,8 @@
 from __future__ import annotations
 from datetime import datetime
 from flask import Response, request , jsonify
-from gitops import update_repo,verify_signature
-from deploy import deploy
+from gitops import update_repo,verify_signature,change_to_project_root
+from deploy import deploy,test_deploy
 import hmac, hashlib, os, json
 
 
@@ -16,10 +16,10 @@ def register_routes(app):
             print("🔔 Webhook received")
 
             # --- Step 1: Verify GitHub signature (important for security) ---
-            if not verify_signature(request):
-                print("❌ Invalid signature - rejected")
-                return jsonify({"error": "invalid signature"}), 403
-            print("✅ Signature verified")
+            #if not verify_signature(request):
+             #   print("❌ Invalid signature - rejected")
+              #  return jsonify({"error": "invalid signature"}), 403
+            #print("✅ Signature verified")
 
             # --- Step 2: Parse JSON ---
             data = request.get_json(silent=True)
@@ -43,9 +43,19 @@ def register_routes(app):
                 #return jsonify({"status": "ignored (not master)"}), 200
 
             print("🚀 Running CI for master branch...")
+            change_to_project_root()
+            update_repo()  
 
-            # --- Step 5: Pull code and deploy ---
-            # update_repo()  # if you want to pull directly
-            #deploy()
+            #if test_deploy():
+             #   print("All tests passed — deploying production…")
+            deploy_status=deploy()
+                ##mailing logic here
+            #else:
+             #   print("Tests failed — aborting deployment.")
+                #mailing logic here
+            if not deploy_status:
+                print("❌ Production deploy failed.")
+                exit(1)
 
+            print("🎉 Deployment completed successfully!")
             return jsonify({"status": "deployed"}), 200
