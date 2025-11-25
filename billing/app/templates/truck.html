@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gan Shmuel: Trucks</title>
+
+    <!-- Same base styling as Providers / Rates pages -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: #ffffff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            font-size: 0.95rem;
+            color: #555;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        form {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #fafafa;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="time"],
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #007bff;  /* blue button */
+            color: white;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #0056b3;  /* darker blue on hover */
+        }
+
+        .alert {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .alert.error {
+            background-color: #ffe5e5;
+            border: 1px solid #ff6b6b;
+            color: #b00000;
+        }
+
+        .alert.success {
+            background-color: #e6ffed;
+            border: 1px solid #47c366;
+            color: #216b3a;
+        }
+
+        .section {
+            margin-top: 20px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: -4px;
+            margin-bottom: 10px;
+        }
+
+        .sessions-list {
+            margin-top: 10px;
+        }
+
+        .sessions-list ul {
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Main title & subtitle -->
+    <h1>Gan Shmuel: Trucks</h1>
+    <p class="page-subtitle">
+        Register trucks, update their provider and view their weight sessions.
+    </p>
+
+    <!-- Global messages -->
+    {% if error_message %}
+        <div class="alert error">
+            {{ error_message }}
+        </div>
+    {% endif %}
+
+    {% if success_message %}
+        <div class="alert success">
+            {{ success_message }}
+        </div>
+    {% endif %}
+
+    <!-- ======================== TRUCKS – REGISTER ======================== -->
+    <div class="section">
+        <h2>Trucks – Register</h2>
+        <p class="subtitle">Register a new truck and assign it to a provider.</p>
+
+        <!-- Logical POST /truck -->
+        <form method="post">
+            <!-- Used by the UI route to know which form was submitted -->
+            <input type="hidden" name="form_type" value="truck_create">
+
+            <label for="create_truck_id">Truck ID (license plate):</label>
+            <input
+                type="text"
+                id="create_truck_id"
+                name="truck_id"
+                placeholder="e.g. 12-345-67"
+            >
+
+            <label for="create_provider_id">Provider:</label>
+            <select id="create_provider_id" name="provider_id">
+                {% for p in providers %}
+                    <option value="{{ p.id }}">{{ p.id }} - {{ p.name }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Register Truck</button>
+        </form>
+    </div>
+
+    <!-- ======================== TRUCKS – UPDATE PROVIDER ======================== -->
+    <div class="section">
+        <h2>Trucks – Update Provider</h2>
+        <p class="subtitle">Update the provider assigned to an existing truck.</p>
+
+        <!-- Logical PUT /truck/<id> -->
+        <form method="post">
+            <input type="hidden" name="form_type" value="truck_update">
+
+            <label for="update_truck_id">Truck ID:</label>
+            <input
+                type="text"
+                id="update_truck_id"
+                name="truck_id"
+                placeholder="Existing truck ID (e.g. 12-345-67)"
+            >
+
+            <label for="update_provider_id">New Provider:</label>
+            <select id="update_provider_id" name="provider_id">
+                {% for p in providers %}
+                    <option value="{{ p.id }}">{{ p.id }} - {{ p.name }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Update Provider</button>
+        </form>
+    </div>
+
+    <!-- ======================== TRUCKS – INFO & SESSIONS ======================== -->
+    <div class="section">
+        <h2>Trucks – Info & Sessions</h2>
+        <p class="subtitle">
+            Fetch tara and weighing sessions for a truck.<br>
+            If "From" / "To" are empty, defaults will be used (1st of month → now).
+        </p>
+
+        <!-- Logical GET /truck/<id>?from=&to= -->
+        <form method="post">
+            <input type="hidden" name="form_type" value="truck_info">
+
+            <label for="info_truck_id">Truck ID:</label>
+            <input
+                type="text"
+                id="info_truck_id"
+                name="truck_id"
+                placeholder="Truck ID (e.g. 12-345-67)"
+            >
+
+            <!-- From range -->
+            <label for="from_date">From (Date, optional):</label>
+            <input
+                type="date"
+                id="from_date"
+                name="from_date"
+            >
+
+            <label for="from_time">From (Time, optional):</label>
+            <input
+                type="time"
+                id="from_time"
+                name="from_time"
+            >
+
+            <!-- To range -->
+            <label for="to_date">To (Date, optional):</label>
+            <input
+                type="date"
+                id="to_date"
+                name="to_date"
+            >
+
+            <label for="to_time">To (Time, optional):</label>
+            <input
+                type="time"
+                id="to_time"
+                name="to_time"
+            >
+
+            <button type="submit">Get Truck Info</button>
+        </form>
+
+        {% if truck_info %}
+            <div class="sessions-list">
+                <h3>Truck Info</h3>
+                <p><strong>ID:</strong> {{ truck_info.id }}</p>
+                <p><strong>From (API format):</strong> {{ truck_info.from }}</p>
+                <p><strong>To (API format):</strong> {{ truck_info.to }}</p>
+                <p><strong>Tara:</strong> {{ truck_info.tara }}</p>
+
+                <h4>Sessions:</h4>
+                {% if truck_info.sessions %}
+                    <ul>
+                        {% for s in truck_info.sessions %}
+                            <li>Session ID: {{ s }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No sessions found for this period.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+</div> <!-- end container -->
+
+</body>
+</html>
+
