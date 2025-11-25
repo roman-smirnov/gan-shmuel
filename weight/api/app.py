@@ -99,7 +99,9 @@ def init_app(test_config=None):
             new_row, new_row.direction, new_row.truck
         )  # handle the sessions
         if last_row:  # check if the last row exist
-            if (last_row.direction == "in" or not last_row.direction) and new_row.direction == "out":
+            if (
+                last_row.direction == "in" or not last_row.direction
+            ) and new_row.direction == "out":
                 # handle the situation truck -> in\ null -> out
                 containers_weight = utils.calc_containers_weight(new_row.containers)
                 if containers_weight or len(new_row.containers) == 0:
@@ -148,9 +150,9 @@ def init_app(test_config=None):
         raw_to = request.args.get("to")
 
         # Check if container or truck exists
-        if not utils.get_query_transactions(None, None, None, item_id, None) and not utils.get_query_transactions(
-            None, None, None, None, item_id
-        ):
+        if not utils.get_query_transactions(
+            None, None, None, item_id, None
+        ) and not utils.get_query_transactions(None, None, None, None, item_id):
             if utils.is_ui_mode():
                 return render_template(
                     "item.html",
@@ -230,7 +232,7 @@ def init_app(test_config=None):
                     Containers_registered(
                         container_id=entry["id"],
                         weight=entry["weight"],
-                            unit=entry["unit"],
+                        unit=entry["unit"],
                     )
                 )
 

@@ -154,8 +154,10 @@ def update_row(old_row, new_row):
         rows = get_query_transactions(
             None, None, None, None, new_row.truck
         )  # get the last in transaction of the truck
-        if len(rows) > 1: #need to find the position of the last in
-            last_in = rows[-2] # [-1] - is the last out since its update, [-2] is the last in
+        if len(rows) > 1:  # need to find the position of the last in
+            last_in = rows[
+                -2
+            ]  # [-1] - is the last out since its update, [-2] is the last in
         neto = calc_neto_fruit(
             int(last_in.bruto), old_row.truckTara, last_in.containers
         )
