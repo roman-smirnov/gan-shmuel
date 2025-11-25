@@ -7,7 +7,7 @@ DOCKER_COMPOSE=()   # will be filled in init_docker_compose
 usage() {
   cat <<EOF
 Usage:
-  $0 [--build|-b] (--prod|-p | --test|-t)
+  $0 [--build|-b] [--master] (--prod|-p | --test|-t)
   $0 down (--prod|-p | --test|-t | --all)
 
 Commands (implicit):
@@ -18,12 +18,14 @@ Options:
   -p, --prod     Use the production stack (project name: prod)
   -t, --test     Use the test stack (project name: test)
   --all          With "down", stop both prod and test stacks
+  --master       (prod only, up only) start all services EXCEPT devops-app
   -b, --build    Pass --build to 'docker compose up'
   -h, --help     Show this help message and exit
 
 Examples:
   $0 --prod
   $0 -p -b
+  $0 --prod -b --master
   $0 --test
   $0 -t --build
   $0 down --prod
@@ -80,6 +82,7 @@ parse_args() {
   local mode=""
   local build=""     # empty = false; non-empty = true
   local all=""       # empty = false; non-empty = true
+  local master=""    # empty = false; non-empty = true
 
   # Optional first argument: "down" or "up"
   if [[ $# -gt 0 ]]; then
@@ -125,6 +128,10 @@ parse_args() {
         all=1
         shift
         ;;
+      --master)
+        master=1
+        shift
+        ;;
       -h|--help)
         usage
         exit 0
@@ -152,13 +159,23 @@ parse_args() {
     fi
   fi
 
-  # Encode "--all" as a pseudo-mode to simplify main()
+  # "down --all" pseudo-mode
   if [[ "$action" == "down" && -n "$all" ]]; then
     mode="all"
   fi
 
-  # "Return": "<action> <mode> <build_flag>"
-  printf '%s %s %s\n' "$action" "$mode" "${build:+true}"
+  # Validate --master semantics *after* mode/action are settled
+  if [[ -n "$master" ]]; then
+    if [[ "$action" != "up" ]]; then
+      error "--master is only valid with 'up'."
+    fi
+    if [[ "$mode" != "prod" ]]; then
+      error "--master requires --prod/-p."
+    fi
+  fi
+
+  # "Return": "<action> <mode> <build_flag> <master_flag>"
+  printf '%s %s %s %s\n' "$action" "$mode" "${build:+true}" "${master:+true}"
 }
 
 set_mode_env() {
@@ -178,7 +195,6 @@ set_mode_env() {
       export BILLING_PORT=8086
       export WEIGHT_MYSQL_PORT=3456
       export GAN_SHMUEL_NETWORK="gan-shmuel-test-net"
-
       ;;
     *)
       error "invalid mode: $mode"
@@ -189,6 +205,7 @@ set_mode_env() {
 run_compose_up() {
   local mode="$1"
   local build="$2"
+  local master="$3"  # "true" or empty
 
   local project="$mode"
   local docker_cmd=("${DOCKER_COMPOSE[@]}" -p "$project" up)
@@ -198,6 +215,15 @@ run_compose_up() {
   fi
 
   docker_cmd+=(-d)
+
+  # If we're in prod + --master, start everything EXCEPT devops-app.
+  # This assumes your services are:
+  #   - devops-app (devops)
+  #   - billing-app, billing-db
+  #   - weight-app, weight-db
+  if [[ "$master" == "true" && "$mode" == "prod" ]]; then
+    docker_cmd+=(billing-app billing-db weight-app weight-db)
+  fi
 
   printf 'Running command:'
   printf ' %q' "${docker_cmd[@]}"
@@ -247,12 +273,12 @@ main() {
   local parsed
   parsed="$(parse_args "$@")"
 
-  local action mode build
-  read -r action mode build <<<"$parsed"
+  local action mode build master
+  read -r action mode build master <<<"$parsed"
 
   if [[ "$action" == "up" ]]; then
     set_mode_env "$mode"
-    run_compose_up "$mode" "$build"
+    run_compose_up "$mode" "$build" "$master"
   else
     # action == down
     if [[ "$mode" == "all" ]]; then
