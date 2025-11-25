@@ -149,8 +149,10 @@ def init_app(test_config=None):
         raw_from = request.args.get("from")
         raw_to = request.args.get("to")
 
-        # Check if item exists
-        if not utils.get_query_transactions(None, None, None, item_id, None):
+        # Check if container or truck exists
+        if not utils.get_query_transactions(None, None, None, item_id, None) and not utils.get_query_transactions(
+            None, None, None, None, item_id
+        ):
             if utils.is_ui_mode():
                 return render_template(
                     "item.html",
@@ -174,6 +176,9 @@ def init_app(test_config=None):
 
         relevant_transactions = utils.get_query_transactions(
             from_date, to_date, None, item_id, None
+        )
+        relevant_transactions += utils.get_query_transactions(
+            from_date, to_date, None, None, item_id
         )
 
         # Build results with appropriate key names
