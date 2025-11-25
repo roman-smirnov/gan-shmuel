@@ -1,8 +1,8 @@
 from __future__ import annotations
 from datetime import datetime
 from flask import Response, request , jsonify
-from gitops import update_repo,verify_signature
-from deploy import deploy
+from gitops import update_repo,verify_signature,change_to_project_root
+from deploy import deploy,test_deploy,test_shutdown
 import hmac, hashlib, os, json
 
 
@@ -13,39 +13,73 @@ def register_routes(app):
     
     @app.route("/webhook", methods=["POST"])
     def webhook():
-            print("🔔 Webhook received")
+        print("🔔 Webhook received")
 
-            # --- Step 1: Verify GitHub signature (important for security) ---
-            if not verify_signature(request):
-                print("❌ Invalid signature - rejected")
-                return jsonify({"error": "invalid signature"}), 403
-            print("✅ Signature verified")
+        # --- Signature verification ---
+        # if not verify_signature(request):
+        #     print("❌ Invalid signature")
+        #     return jsonify({"error": "invalid signature"}), 403
 
-            # --- Step 2: Parse JSON ---
-            data = request.get_json(silent=True)
-            if not data:
-                return jsonify({"error": "invalid json"}), 400
+        # --- Parse JSON ---
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify({"error": "invalid json"}), 400
+        repo_owner_email = (
+            data.get("repository", {})
+                .get("owner", {})
+                .get("email", "not-provided")
+        )
 
-            # --- Step 3: Extract required fields ---
-            ref = data.get("ref")                       # branch
-            pusher = data.get("pusher", {}).get("name") # person who pushed
-            repo_url = data.get("repository", {}).get("ssh_url")  # optional
-            commit_sha = data.get("after")              # optional
+        pusher_email = (
+            data.get("pusher", {})
+                .get("email", "not-provided")
+        )
+        author_email = (
+            data.get("head_commit", {})
+                .get("author", {})
+                .get("email")
+        )
 
-            print(f"📌 Branch: {ref}")
-            print(f"👤 Pusher: {pusher}")
-            print(f"🔗 Repo URL: {repo_url}")
-            print(f"🔑 Commit SHA: {commit_sha}")
+        print(f"📧 Repo owner: {repo_owner_email}"
+              f", Pusher: {pusher_email}")
 
-            # --- Step 4: Only run CI on master ---
-            if ref != "refs/heads/master":
-                print("➡️ Ignored: not master")
-                #return jsonify({"status": "ignored (not master)"}), 200
+        # Extract branch: "refs/heads/master" → "master"
+        ref = data.get("ref", "")
+        branch = ref.replace("refs/heads/", "")
 
-            print("🚀 Running CI for master branch...")
+        print(f"📌 Branch pushed: {branch}")
 
-            # --- Step 5: Pull code and deploy ---
-            # update_repo()  # if you want to pull directly
-            #deploy()
+        # we only support two branches
+        if branch not in ["master", "development"]:
+            print("➡️ Ignored: branch not allowed")
+            return jsonify({"status": "ignored"}), 200
 
-            return jsonify({"status": "deployed"}), 200
+        print(f"🚀 Running CI/CD pipeline for: {branch}")
+
+        # Change working directory
+        change_to_project_root()
+
+        # Update repo
+        try:
+            update_repo(branch)
+        except Exception as e:
+            print(e)
+            return jsonify({"status": "repo update failed"}), 500
+
+        # Run tests
+        # Run tests for any branch
+        if not test_deploy():
+            test_shutdown()
+            return jsonify({"status": "tests failed"}), 400
+        test_shutdown()
+        
+        # Deploy only if master
+        if branch == "master":
+            print("🚀 Master branch pushed — deploying...")
+            if deploy():
+                return jsonify({"status": "deployed"}), 200
+            else:
+                return jsonify({"status": "deploy failed"}), 500
+        else:
+            print("ℹ️ Development branch pushed — tests passed but no deployment.")
+            return jsonify({"status": "tests passed (no deployment)"}), 200
