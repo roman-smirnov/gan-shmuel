@@ -94,13 +94,15 @@ Each weighing generates a consistent session record:
 
 ### ✔ `GET /item/<id>`
 Returns:
-json
+```
 {
 "id": "<str>",
 "tara": "<int or 'na'>",
 "sessions": ["s1", "s2", ...]
 }
+```
 GET /session/<id>
+```
 {
   "id": "<str>",
   "truck": "<id or 'na'>",
@@ -108,6 +110,8 @@ GET /session/<id>
   "truckTara": <int>, // OUT only
   "neto": <int or 'na'>
 }
+```
+```
 +----------------------------+
 |      Weight API (Flask)    |
 +--------------+-------------+
@@ -116,6 +120,7 @@ GET /session/<id>
 +----------------------------+
 |        MySQL weightdb      |
 +----------------------------+
+```
 🧪 Testing
 
 Unit tests – weighing logic, container rules
