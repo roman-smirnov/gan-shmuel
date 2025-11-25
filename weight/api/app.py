@@ -212,6 +212,8 @@ def init_app(test_config=None):
                     abort(400, description="Invalid unit in CSV header")
                 for line in lines[1:]:
                     cid, weight = line.strip().split(",")
+                    if weight == "" or weight is None:
+                        weight = 0
                     db.session.add(
                         Containers_registered(
                             container_id=cid, weight=weight, unit=unit
@@ -224,6 +226,8 @@ def init_app(test_config=None):
             for entry in data:
                 if entry["unit"] not in ["kg", "lbs"]:
                     abort(400, description="Invalid unit in JSON data")
+                if entry["weight"] == "" or entry["weight"] is None:
+                    entry["weight"] = 0
                 db.session.add(
                     Containers_registered(
                         container_id=entry["id"],
