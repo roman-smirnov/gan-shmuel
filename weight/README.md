@@ -93,13 +93,16 @@ Each weighing generates a consistent session record:
 ---
 
 ### ✔ `GET /item/<id>`
+
 Returns:
+
 ```json
 {
-"id": "<str>",
-"tara": "<int or 'na'>",
-"sessions": ["s1", "s2", ...]
+  "id": "<str>",
+  "tara": "<int or \"na\">",
+  "sessions": ["s1", "s2", "..."]
 }
+```
 GET /session/<id>
 {
   "id": "<str>",
