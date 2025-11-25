@@ -16,9 +16,9 @@ def register_routes(app):
         print("🔔 Webhook received")
 
         # --- Signature verification ---
-        #if not verify_signature(request):
-         #   print("❌ Invalid signature")
-          #  return jsonify({"error": "invalid signature"}), 403
+        if not verify_signature(request):
+            print("❌ Invalid signature")
+            return jsonify({"error": "invalid signature"}), 403
 
         # --- Parse JSON ---
         data = request.get_json(silent=True)
