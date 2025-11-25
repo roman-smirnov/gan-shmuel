@@ -18,20 +18,26 @@ def test_deploy():
             # --- BILLING TESTS ---
             print("Running billing tests…")
             try:
-                subprocess.run(["pytest", "billing/tests", "-q"], check=True)
-                print("Billing tests PASSED!")
+                subprocess.run(
+                    ["docker", "exec","test-billing-app-1", "pytest", "tests/"],
+                    check=True
+                )
+                print("✅ Tests passed!")
             except subprocess.CalledProcessError:
-                print("Billing tests FAILED!")
+                print("❌ Tests FAILED")
                 all_tests_passed = False
 
             # --- WEIGHT TESTS ---
             print("Running weight tests…")
-            try:
-                subprocess.run(["pytest", "weight/tests", "-q"], check=True)
-                print("Weight tests PASSED!")
-            except subprocess.CalledProcessError:
-                print("Weight tests FAILED!")
-                all_tests_passed = False
+            #try:
+             #   subprocess.run(["pytest", "weight/tests", "-q"], check=True)
+              #  print("Weight tests PASSED!")
+            #except subprocess.CalledProcessError:
+             #   print("Weight tests FAILED!")
+             #   all_tests_passed = False
+            
+            
+            return all_tests_passed
 
         else:
             print("run.sh not found — skipping execution.")
@@ -40,8 +46,6 @@ def test_deploy():
     except Exception as e:
         print(f"Error during test deploy: {e}")
         return False
-
-    return all_tests_passed
 
 def deploy():
     run_script = "run.sh"

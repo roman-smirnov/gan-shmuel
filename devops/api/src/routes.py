@@ -12,50 +12,49 @@ def register_routes(app):
         return "Hello World", 200
     
     @app.route("/webhook", methods=["POST"])
+    @app.route("/webhook", methods=["POST"])
     def webhook():
-            print("🔔 Webhook received")
+        print("🔔 Webhook received")
 
-            # --- Step 1: Verify GitHub signature (important for security) ---
-            #if not verify_signature(request):
-             #   print("❌ Invalid signature - rejected")
-              #  return jsonify({"error": "invalid signature"}), 403
-            #print("✅ Signature verified")
+        # --- Signature verification ---
+        if not verify_signature(request):
+            print("❌ Invalid signature")
+            return jsonify({"error": "invalid signature"}), 403
 
-            # --- Step 2: Parse JSON ---
-            data = request.get_json(silent=True)
-            if not data:
-                return jsonify({"error": "invalid json"}), 400
+        # --- Parse JSON ---
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify({"error": "invalid json"}), 400
 
-            # --- Step 3: Extract required fields ---
-            ref = data.get("ref")                       # branch
-            pusher = data.get("pusher", {}).get("name") # person who pushed
-            repo_url = data.get("repository", {}).get("ssh_url")  # optional
-            commit_sha = data.get("after")              # optional
+        # Extract branch: "refs/heads/master" → "master"
+        ref = data.get("ref", "")
+        branch = ref.replace("refs/heads/", "")
 
-            print(f"📌 Branch: {ref}")
-            print(f"👤 Pusher: {pusher}")
-            print(f"🔗 Repo URL: {repo_url}")
-            print(f"🔑 Commit SHA: {commit_sha}")
+        print(f"📌 Branch pushed: {branch}")
 
-            # --- Step 4: Only run CI on master ---
-            if ref != "refs/heads/master":
-                print("➡️ Ignored: not master")
-                #return jsonify({"status": "ignored (not master)"}), 200
+        # we only support two branches
+        if branch not in ["master", "development"]:
+            print("➡️ Ignored: branch not allowed")
+            return jsonify({"status": "ignored"}), 200
 
-            print("🚀 Running CI for master branch...")
-            change_to_project_root()
-            update_repo()  
+        print(f"🚀 Running CI/CD pipeline for: {branch}")
 
-            #if test_deploy():
-             #   print("All tests passed — deploying production…")
-            deploy_status=deploy()
-                ##mailing logic here
-            #else:
-             #   print("Tests failed — aborting deployment.")
-                #mailing logic here
-            if not deploy_status:
-                print("❌ Production deploy failed.")
-                exit(1)
+        # Change working directory
+        change_to_project_root()
 
-            print("🎉 Deployment completed successfully!")
+        # Update repo
+        try:
+            update_repo(branch)
+        except Exception as e:
+            print(e)
+            return jsonify({"status": "repo update failed"}), 500
+
+        # Run tests
+        if not test_deploy(branch):
+            return jsonify({"status": "tests failed"}), 400
+
+        # Deploy if tests pass
+        if deploy(branch):
             return jsonify({"status": "deployed"}), 200
+        else:
+            return jsonify({"status": "deploy failed"}), 500
