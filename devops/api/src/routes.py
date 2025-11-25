@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 from flask import Response, request , jsonify
 from gitops import update_repo,verify_signature,change_to_project_root
-from deploy import deploy,test_deploy, test_shutdown
+from deploy import deploy,test_deploy,test_shutdown
 import hmac, hashlib, os, json
 
 
