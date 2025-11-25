@@ -5,7 +5,6 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /billingdb
 
-# TODO: Later, when we work with Excel, we will need to use openpyxl because it is the only one that works with Alpine.
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt

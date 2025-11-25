@@ -24,12 +24,8 @@ def get_item_from_weight(truck_id, from_date, to_date):
 def get_weight_data(from_date, to_date, filter_type='in'):
     """
     Fetch weighing data from Weight service with truck info.
-    
-    This requires TWO API calls per session:
-    1. GET /weight - to get all sessions
-    2. GET /session/<id> - to get truck for each session
     """
-    url = current_app.config['WEIGHT_SERVICE_URL']
+    url = current_app.config['WEIGHT_BASE_URL']
     
     try:
         # Step 1: Get all weighing sessions
@@ -43,38 +39,61 @@ def get_weight_data(from_date, to_date, filter_type='in'):
             timeout=10
         )
         response.raise_for_status()
-        sessions = response.json()
+        data = response.json()
         
-        # Step 2: For each session, get truck info
+        
+        # FIX: Extract sessions from the response
+        if isinstance(data, dict) and 'results' in data:
+            sessions = data['results']
+        elif isinstance(data, list):
+            sessions = data
+        elif isinstance(data, dict):
+            sessions = [data]
+        else:
+            raise ValueError(f"Unexpected response format from Weight API")
+        
+        
+        # Step 2: For each session, get truck info from GET /session/<id>
         enriched_sessions = []
-        for session in sessions:
+        for idx, session in enumerate(sessions):
+            
+            if not isinstance(session, dict):
+                continue
+            
             session_id = session.get('id')
+            if not session_id:
+                continue
             
-            # Call GET /session/<id> to get truck
-            session_detail = requests.get(
-                f"{url}/session/{session_id}",
-                timeout=5
-            )
-            session_detail.raise_for_status()
-            detail = session_detail.json()
             
-            # Merge the data
-            enriched_session = {
-                'id': session.get('id'),
-                'direction': session.get('direction'),
-                'truck': detail.get('truck', 'na'),  # ← Get truck from session detail!
-                'bruto': session.get('bruto'),
-                'neto': session.get('neto'),
-                'produce': session.get('produce'),
-                'containers': session.get('containers', [])
-            }
-            enriched_sessions.append(enriched_session)
+            try:
+                session_detail = requests.get(
+                    f"{url}/session/{session_id}",
+                    timeout=5
+                )
+                session_detail.raise_for_status()
+                detail = session_detail.json()
+                
+                # Merge the data - truck comes from session detail
+                enriched_session = {
+                    'id': session.get('id'),
+                    'direction': session.get('direction'),
+                    'truck': detail.get('truck', 'na'),  # ← From GET /session
+                    'bruto': session.get('bruto'),
+                    'neto': session.get('neto'),
+                    'produce': session.get('produce'),
+                    'containers': session.get('containers', [])
+                }
+                enriched_sessions.append(enriched_session)
+                
+            except requests.exceptions.HTTPError as e:
+                # Skip this session if we can't get truck info
+                continue
         
         return enriched_sessions
         
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.ConnectionError as e:
         raise ConnectionError("Cannot connect to Weight service")
-    except requests.exceptions.Timeout:
+    except requests.exceptions.Timeout as e:
         raise ConnectionError("Weight service timed out")
     except requests.exceptions.HTTPError as e:
         raise Exception(f"Weight service error: {e.response.status_code}")
