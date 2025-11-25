@@ -23,7 +23,6 @@ def create_app():
     app.register_blueprint(rates_bp)
     app.register_blueprint(ui_provider_bp)
     app.register_blueprint(ui_rates_bp)
-    app.register_blueprint(bills_bp)
     app.register_blueprint(ui_truck_bp)
     app.register_blueprint(ui_bills_bp)
 
