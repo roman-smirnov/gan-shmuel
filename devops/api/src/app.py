@@ -3,6 +3,7 @@ from routes import register_routes
 from deploy import deploy
 
 
+
 def create_app() -> Flask:
     app = Flask(__name__, static_folder="static")
     register_routes(app)

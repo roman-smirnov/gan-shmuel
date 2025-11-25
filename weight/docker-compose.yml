@@ -3,9 +3,11 @@
 services:
   weight-db:
     image: mysql:9.0.1
-    env_file:
-      - .env
     environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_TCP_PORT=${WEIGHT_MYSQL_PORT}
     volumes:
       - db-data:/var/lib/mysql
@@ -19,9 +21,13 @@ services:
 
 
   weight-app:
-    build: ./api
-    env_file:
-      - .env
+    build: .
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - WEIGHT_MYSQL_PORT=${WEIGHT_MYSQL_PORT}
     volumes:
       - ./api/in:/app/in
     depends_on:
@@ -29,7 +35,7 @@ services:
         condition: service_healthy
     ports:
       - "${WEIGHT_PORT}:5000"
-    command: python app.py
+
 
 
 

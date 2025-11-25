@@ -6,16 +6,22 @@ RUN useradd -m -u 1000 appuser
 WORKDIR /app
 
 # Copy requirements and install as root
-COPY requirements.txt .
+COPY api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
-COPY app.py .
-COPY utils.py .
+COPY api/app.py src/app.py
+COPY api/utils.py src/utils.py
+COPY api/__init__.py src/__init__.py
 
-#copy UI files
-COPY templates/ ./templates/
-COPY static/ ./static/
+
+#Copy UI files
+COPY api/templates/ src/templates/
+COPY api/static/ src/static/
+
+#copy test files
+COPY tests/ /app/tests
+COPY __init__.py . 
 
 # Change ownership to non-root user
 RUN chown -R appuser:appuser /app
@@ -27,4 +33,4 @@ USER appuser
 EXPOSE 5000
 
 # Run the application
-CMD ["python", "app.py"]
+ENTRYPOINT ["python", "-m", "src.app"]
