@@ -4,14 +4,14 @@
 {% block content %}
 <a href="{{ url_for('home') }}" class="btn btn-link px-0 mb-3">&larr; Back to dashboard</a>
 
-<h2 class="mb-3">Search transactions by item</h2>
+<h2 class="mb-3">Search transactions by truck or container</h2>
 
 <form id="itemSearchForm" method="get" class="row g-3">
   <!-- Force UI mode -->
   <input type="hidden" name="ui" value="1">
 
   <div class="col-md-4">
-    <label class="form-label">Item / Produce ID</label>
+    <label class="form-label">Truck / container</label>
     <input id="itemIdInput" name="item_id" class="form-control" value="{{ item_id or '' }}" required>
   </div>
 
