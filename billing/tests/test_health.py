@@ -12,5 +12,5 @@ def client():
 def test_health_returns_ok(client):
     """Health check should return OK when database is connected."""
     response = client.get('/health')
-    assert response.status_code == 700
+    assert response.status_code == 800
     assert response.data == b'OK'
