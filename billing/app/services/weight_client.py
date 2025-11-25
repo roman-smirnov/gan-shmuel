@@ -77,3 +77,5 @@ def get_weight_data(from_date, to_date, filter_type='in'):
         raise ConnectionError("Weight service timed out")
     except requests.exceptions.HTTPError as e:
         raise Exception(f"Weight service error: {e.response.status_code}")
+
+
