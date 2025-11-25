@@ -33,7 +33,7 @@ def rates_home():
                 if api_response.status_code == 200:
                     success_message = "Rates uploaded & saved to DB successfully!"
                 else:
-                    # 🚨 ALWAYS show a clean error message – never show the full API JSON
+                    #  ALWAYS show a clean error message – never show the full API JSON
                     error_message = "Failed to process rates file. Please check the format."
 
             except Exception:
