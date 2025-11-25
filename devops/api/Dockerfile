@@ -2,6 +2,7 @@ FROM docker:27-cli
 
 RUN apk add --no-cache python3 py3-pip git bash 
 
+
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
