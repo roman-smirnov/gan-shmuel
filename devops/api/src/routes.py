@@ -15,6 +15,7 @@ def register_routes(app):
     def webhook():
         print("🔔 Webhook received")
 
+
         # --- Signature verification ---
         if not verify_signature(request):
             print("❌ Invalid signature")
@@ -24,6 +25,14 @@ def register_routes(app):
         data = request.get_json(silent=True)
         if not data:
             return jsonify({"error": "invalid json"}), 400
+        # 1. Repo owner email
+        repo_owner_email = data["repository"]["owner"]["email"]
+
+        # 2. Pusher email (often GitHub noreply)
+        pusher_email = data["pusher"]["email"]
+
+        print(f"📧 Repo owner: {repo_owner_email}"
+              f", Pusher: {pusher_email}")
 
         # Extract branch: "refs/heads/master" → "master"
         ref = data.get("ref", "")
