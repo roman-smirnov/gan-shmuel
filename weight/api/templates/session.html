@@ -14,11 +14,6 @@
     <input name="session_id" class="form-control" value="{{ request.args.get('session_id', '') }}" placeholder="Enter session ID">
   </div>
 
-  <div class="col-md-6">
-    <label class="form-label">Truck License Plate</label>
-    <input name="truck" class="form-control" value="{{ request.args.get('truck', '') }}" placeholder="Enter truck number">
-  </div>
-
   <div class="col-12">
     <button class="btn btn-primary">Search</button>
   </div>
@@ -32,48 +27,27 @@
     <table class="table table-sm table-striped">
       <thead>
         <tr>
-          <th>Session ID</th>
-          <th>Transaction ID</th>
+          <th>ID</th>
           <th>Truck</th>
-          <th>Direction</th>
-          <th>Produce</th>
           <th>Bruto</th>
+          <th>Truck Tara</th>
           <th>Neto</th>
-          <th>Date/Time</th>
-          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for session in sessions %}
           <tr>
-            <td>
-              {% if session.session_id %}
-                <a href="{{ url_for('get_session', id=session.session_id) }}?ui=1" class="text-decoration-none">
-                  {{ session.session_id }}
-                </a>
-              {% else %}
-                -
-              {% endif %}
-            </td>
-            <td>{{ session.id }}</td>
-            <td>{{ session.truck }}</td>
-            <td>
-              <span class="badge {% if session.direction == 'in' %}bg-success{% elif session.direction == 'out' %}bg-warning{% else %}bg-secondary{% endif %}">
-                {{ session.direction }}
-              </span>
-            </td>
-            <td>{{ session.produce }}</td>
+            <td>{{ session.session_id }}</td>
+            <td>{{ session.truck or "na" }}</td>
             <td>{{ session.bruto }} kg</td>
-            <td>{{ session.neto or "-" }} kg</td>
-            <td>{{ session.truckTara or "-" }} kg</td>
-            <td class="text-truncate" style="max-width: 200px;">{{ session.containers or "-" }}</td>
-            <td>{{ session.datetime.strftime('%Y-%m-%d %H:%M') if session.datetime else "-" }}</td>
+            <td>{{ session.truckTara if session.truckTara is not none else "na" }}</td>
+            <td>{{ session.neto if session.neto is not none else "na" }}</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   {% else %}
-    <p class="text-muted">No sessions found. Please search by Session ID or Truck number.</p>
+    <p class="text-muted">No sessions found. Please search by Session ID.</p>
   {% endif %}
 {% endif %}
 

@@ -255,17 +255,15 @@ def init_app(test_config=None):
         out_row = next((r for r in rows if r.direction == "out"), None)
 
         if out_row:
-            return jsonify(
-                {
-                    "id": str(out_row.id),
-                    "truck": out_row.truck if out_row.truck else "na",
-                    "bruto": out_row.bruto,
-                    "truckTara": out_row.truckTara
-                    if out_row.truckTara is not None
-                    else "na",
-                    "neto": out_row.neto if out_row.neto is not None else "na",
-                }
-            ), 200
+            result = {
+                "id": str(out_row.session_id),
+                "truck": out_row.truck if out_row.truck else "na",
+                "bruto": out_row.bruto,
+                "truckTara": out_row.truckTara
+                if out_row.truckTara is not None
+                else "na",
+                "neto": out_row.neto if out_row.neto is not None else "na",
+            }
         else:
             in_row = rows[0]
             result = {
@@ -276,7 +274,7 @@ def init_app(test_config=None):
 
         if utils.is_ui_mode():
             return render_template(
-                "session_details.html", session=out_row or rows[0], error=None
+                "session.html", sessions=rows
             )
 
         return jsonify(result), 200
@@ -325,7 +323,6 @@ def init_app(test_config=None):
     @app.route("/ui/session", methods=["GET"])
     def weighting_session():
         session_id = request.args.get("session_id")
-        truck = request.args.get("truck")
 
         sessions = None
 
@@ -334,13 +331,6 @@ def init_app(test_config=None):
             sessions = Transactions.query.filter(
                 Transactions.session_id == session_id
             ).all()
-        elif truck:
-            # Search by truck
-            sessions = (
-                Transactions.query.filter(Transactions.truck == truck)
-                .order_by(Transactions.datetime.desc())
-                .all()
-            )
 
         return render_template("session.html", sessions=sessions)
 
