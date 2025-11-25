@@ -206,6 +206,8 @@ def init_app(test_config=None):
             with open(f"in/{filename}", "r") as f:
                 lines = f.readlines()
                 unit = lines[0].strip().split(",")[1]
+                if unit not in ["kg", "lbs"]:
+                    abort(400, description="Invalid unit in CSV header")
                 for line in lines[1:]:
                     cid, weight = line.strip().split(",")
                     db.session.add(
@@ -218,11 +220,13 @@ def init_app(test_config=None):
             with open(f"in/{filename}", "r") as f:
                 data = json.load(f)
             for entry in data:
+                if entry["unit"] not in ["kg", "lbs"]:
+                    abort(400, description="Invalid unit in JSON data")
                 db.session.add(
                     Containers_registered(
                         container_id=entry["id"],
                         weight=entry["weight"],
-                        unit=entry["unit"],
+                            unit=entry["unit"],
                     )
                 )
 
