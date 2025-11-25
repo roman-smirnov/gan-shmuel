@@ -5,9 +5,7 @@ import secrets
 import os
 import sys
 import json
-from . import utils
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
+from api import utils
 
 # configure the database connection
 db = SQLAlchemy()
@@ -151,8 +149,10 @@ def init_app(test_config=None):
         raw_from = request.args.get("from")
         raw_to = request.args.get("to")
 
-        # Check if item exists
-        if not utils.get_query_transactions(None, None, None, item_id, None):
+        # Check if container or truck exists
+        if not utils.get_query_transactions(None, None, None, item_id, None) and not utils.get_query_transactions(
+            None, None, None, None, item_id
+        ):
             if utils.is_ui_mode():
                 return render_template(
                     "item.html",
@@ -176,6 +176,9 @@ def init_app(test_config=None):
 
         relevant_transactions = utils.get_query_transactions(
             from_date, to_date, None, item_id, None
+        )
+        relevant_transactions += utils.get_query_transactions(
+            from_date, to_date, None, None, item_id
         )
 
         # Build results with appropriate key names
@@ -209,6 +212,8 @@ def init_app(test_config=None):
                     abort(400, description="Invalid unit in CSV header")
                 for line in lines[1:]:
                     cid, weight = line.strip().split(",")
+                    if weight == "" or weight is None:
+                        weight = 0
                     db.session.add(
                         Containers_registered(
                             container_id=cid, weight=weight, unit=unit
@@ -221,6 +226,8 @@ def init_app(test_config=None):
             for entry in data:
                 if entry["unit"] not in ["kg", "lbs"]:
                     abort(400, description="Invalid unit in JSON data")
+                if entry["weight"] == "" or entry["weight"] is None:
+                    entry["weight"] = 0
                 db.session.add(
                     Containers_registered(
                         container_id=entry["id"],
