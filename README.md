@@ -190,3 +190,6 @@ Show usage and exit:
 ./run.sh --help
 # or
 ./run.sh -h
+
+## Fix Git Problem on EC2
+git config --global --add safe.directory /home/ubuntu/gan-shmuel
