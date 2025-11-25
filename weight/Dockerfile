@@ -10,13 +10,13 @@ COPY api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
-COPY api/app.py src/app.py
-COPY api/utils.py src/utils.py
-COPY api/__init__.py src/__init__.py
+COPY api/app.py api/app.py
+COPY api/utils.py api/utils.py
+COPY api/__init__.py api/__init__.py
 
 
 #Copy UI files
-COPY api/templates/ src/templates/
+COPY api/templates/ api/templates/
 COPY api/static/ src/static/
 
 #copy test files
@@ -29,8 +29,11 @@ RUN chown -R appuser:appuser /app
 # Switch to non-root user
 USER appuser
 
+# Ensure python can import package root
+ENV PYTHONPATH=/app
+
 # Expose port
 EXPOSE 5000
 
 # Run the application
-ENTRYPOINT ["python", "-m", "src.app"]
+ENTRYPOINT ["python", "-m", "api.app"]
