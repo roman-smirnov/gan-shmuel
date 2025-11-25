@@ -93,16 +93,13 @@ Each weighing generates a consistent session record:
 ---
 
 ### ✔ `GET /item/<id>`
-
 Returns:
-
-```json
+json
 {
-  "id": "<str>",
-  "tara": "<int or \"na\">",
-  "sessions": ["s1", "s2", "..."]
+"id": "<str>",
+"tara": "<int or 'na'>",
+"sessions": ["s1", "s2", ...]
 }
-
 GET /session/<id>
 {
   "id": "<str>",
@@ -111,7 +108,6 @@ GET /session/<id>
   "truckTara": <int>, // OUT only
   "neto": <int or 'na'>
 }
-```
 +----------------------------+
 |      Weight API (Flask)    |
 +--------------+-------------+
