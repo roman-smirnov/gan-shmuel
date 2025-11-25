@@ -56,7 +56,7 @@ def register_routes(app):
         # Deploy only if master
         if branch == "master":
             print("🚀 Master branch pushed — deploying...")
-            if deploy(branch):
+            if deploy():
                 return jsonify({"status": "deployed"}), 200
             else:
                 return jsonify({"status": "deploy failed"}), 500
