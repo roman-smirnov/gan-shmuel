@@ -35,3 +35,6 @@ in/*.csv
 
 # Docker
 *.log
+
+# Excel
+*.xlsx
