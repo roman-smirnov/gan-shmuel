@@ -1,12 +1,14 @@
 from flask import Flask
 from routes import register_routes
 from deploy import deploy
+from monitor import start_monitoring
 
 
 
 def create_app() -> Flask:
     app = Flask(__name__, static_folder="static")
     register_routes(app)
+    start_monitoring()
     return app
 
 
