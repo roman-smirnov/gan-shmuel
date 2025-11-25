@@ -97,12 +97,64 @@ def get_trucks_by_provider(provider_id):
 def get_truck_sessions(truck_id, from_date, to_date):
     """
     Get truck's tara weight and weighing sessions from Weight service.
+
+    The Weight service returns a list of transactions like:
+    [
+        {"id": 1, "tara": 5000, "session_id": 123},
+        {"id": 2, "tara": 5100, "session_id": 124},
+        ...
+    ]
+
+    Returns:
+        dict: {
+            'tara': <int> or 'na',  # last known tara in kg
+            'session_ids': [<id1>, <id2>, ...]  # all unique session IDs
+        }
     """
     try:
         item_data = get_item_from_weight(truck_id, from_date, to_date)
+
+        # Weight service returns a LIST of transactions
+        if not isinstance(item_data, list):
+            print(f"Warning: Expected list from weight service, got {type(item_data)}")
+            return {
+                'tara': 'na',
+                'session_ids': []
+            }
+
+        # Extract all unique session_ids and find the tara from transaction with highest ID
+        session_ids = []
+        max_id = None
+        tara_from_max_id = None
+
+        # Process each transaction in the list
+        for transaction in item_data:
+            if not isinstance(transaction, dict):
+                continue
+
+            # Collect session_id
+            session_id = transaction.get('session_id')
+            if session_id is not None and session_id not in session_ids:
+                session_ids.append(session_id)
+
+            # Get transaction ID and tara value
+            transaction_id = transaction.get('id')
+            if transaction_id is None:
+                continue
+
+            # Get tara value - check both 'tara' and 'truckTara' keys
+            # (Weight service uses 'tara' in API mode, 'truckTara' in UI mode)
+            tara = transaction.get('tara') or transaction.get('truckTara')
+
+            # Track the transaction with highest ID that has a valid tara
+            if tara is not None and tara != 'na':
+                if max_id is None or transaction_id > max_id:
+                    max_id = transaction_id
+                    tara_from_max_id = tara
+
         return {
-            'tara': item_data.get('tara', 'na'),
-            'session_ids': item_data.get('sessions', [])
+            'tara': tara_from_max_id if tara_from_max_id is not None else 'na',
+            'session_ids': session_ids
         }
     except Exception as e:
         # Log the error for debugging
@@ -111,3 +163,4 @@ def get_truck_sessions(truck_id, from_date, to_date):
             'tara': 'na',
             'session_ids': []
         }
+
