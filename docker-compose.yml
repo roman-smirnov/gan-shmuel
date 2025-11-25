@@ -5,4 +5,4 @@ include:
 
 networks:
   default:
-    name: gan-shmuel-net
+    name: ${GAN_SHMUEL_NETWORK:-gan-shmuel-net}

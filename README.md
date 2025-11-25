@@ -190,4 +190,3 @@ Show usage and exit:
 ./run.sh --help
 # or
 ./run.sh -h
-```
