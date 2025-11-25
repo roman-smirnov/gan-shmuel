@@ -30,14 +30,12 @@ def calc_containers_weight(containers):
         )  # get list of tuples with all container weight
         if len(results) < len(id_list): #check if less containers returned than the amount sent
             return None
-        for value in results:  # loops on all list
-            if value[1] == "kg":
-                total_weight = total_weight + value[0]
-            else:
-                total_weight = total_weight + convert_lbs_to_kg(value[0])
+        for value in results:  # loops on all list and convert the size into kg if needed
+            total_weight = total_weight + convert_to_kg(value[0],value[1])
+            #value[0] = container weight , value[1] = container unit
         return total_weight
 
-    except:  # except will raise in case the container wasn't found  and return na
+    except Exception:  # except will raise in case the container wasn't found  and return na
         return None
 
 
@@ -53,12 +51,45 @@ def calc_neto_fruit(bruto_weight, truckTara, containers):
 
 
 def convert_kg_to_lbs(kg_num):
-    return int(float(kg_num) * 2.20)
+    return int(round(float(kg_num) * 2.20))
 
+def convert_metric_ton_to_kg(ton_num):
+    return int(ton_num * 1000)
+
+def convert_usa_ton_to_kg(ton_num):
+    return int(round(float(ton_num) * 907.2))
 
 def convert_lbs_to_kg(lbs_num):
-    return int(float(lbs_num) / 2.20)
+    return int(round(float(lbs_num) / 2.20))
 
+def convert_uk_long_ton_to_kg(uk_l_weight):
+    return int(uk_l_weight * 1016)
+
+def convert_to_kg(weight, unit=""):
+    # function receives a weight and unit size and convert it to kg
+    # if the unit type isn't supported it will return None
+    unit_lower = unit.lower()
+    metric_ton = ["t", "tonne", "metric ton", "metric_ton", "mt"]
+    us_ton = ["st", "short ton", "short_ton", "us ton", "us_ton", "ust"]
+    kilogram = ["kg", "kilogram"]
+    pound = ["lb", "lbs", "pound", "pounds", "lbm"]
+    uk_l_ton = ["lt", "long ton", "long_ton", "imperial ton", "imperial_ton"]
+    if unit and weight:
+        if unit_lower in kilogram:
+            return weight
+        elif unit_lower in pound:
+            return convert_lbs_to_kg(weight)
+        elif unit_lower in us_ton:
+            return convert_usa_ton_to_kg(weight)
+        elif unit_lower in metric_ton:
+            return convert_metric_ton_to_kg(weight)
+        elif unit_lower in uk_l_ton:
+            return convert_uk_long_ton_to_kg(weight)
+
+        elif unit == "":
+            return None
+
+    return None
 
 # ---
 # query helper functions
