@@ -29,12 +29,15 @@ def test_deploy():
 
             # --- WEIGHT TESTS ---
             print("Running weight tests…")
-            #try:
-             #   subprocess.run(["pytest", "weight/tests", "-q"], check=True)
-              #  print("Weight tests PASSED!")
-            #except subprocess.CalledProcessError:
-             #   print("Weight tests FAILED!")
-             #   all_tests_passed = False
+            try:
+                subprocess.run(
+                    ["docker", "exec","test-weight-app-1", "pytest", "tests/"],
+                    check=True
+                )
+                print("✅ Tests passed!")
+            except subprocess.CalledProcessError:
+                print("❌ Tests FAILED")
+                all_tests_passed = False
             
             
             return all_tests_passed
