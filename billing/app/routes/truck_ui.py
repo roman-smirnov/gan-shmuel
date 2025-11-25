@@ -29,7 +29,7 @@ def build_api_datetime(date_str, time_str):
 
     Returns:
       - string "yyyymmddhhmmss" if valid
-      - None if parsing fails
+      - None if parsing fails or missing values
     """
     if not date_str or not time_str:
         return None
@@ -107,12 +107,13 @@ def truck_home():
             truck_id_raw = request.form.get("truck_id", "").strip()
             new_provider_raw = request.form.get("provider_id", "").strip()
 
-            # Basic validation
+            # Basic validation for truck id
             if not truck_id_raw:
                 error_message = "Truck ID is required."
             elif len(truck_id_raw) > 10:
                 error_message = "Truck ID must be at most 10 characters."
 
+            # Basic validation for provider id
             if not error_message:
                 if not new_provider_raw:
                     error_message = "Provider ID is required."
@@ -133,6 +134,7 @@ def truck_home():
                     if not provider:
                         error_message = "Provider not found."
                     else:
+                        # Update truck provider
                         try:
                             success = update_truck(truck_id_raw, new_provider_id)
                             if success:
@@ -206,7 +208,7 @@ def truck_home():
                         )
                         from_ts = first_of_month.strftime("%Y%m%d%H%M%S")
 
-            # Final safety check (length + digits)
+            # Final safety check: correct length and numeric
             if not error_message:
                 if not (
                     len(from_ts) == 14
@@ -216,13 +218,25 @@ def truck_home():
                 ):
                     error_message = "Internal error: failed to build valid timestamps for API."
 
-            # Call weight service wrapper
+            # NEW: Validate that 'to' is not earlier than 'from'
+            if not error_message:
+                try:
+                    from_dt = datetime.strptime(from_ts, "%Y%m%d%H%M%S")
+                    to_dt = datetime.strptime(to_ts, "%Y%m%d%H%M%S")
+                    if to_dt < from_dt:
+                        error_message = (
+                            "'To' date/time cannot be earlier than 'From' date/time."
+                        )
+                except ValueError:
+                    error_message = "Internal error: invalid timestamps built for API."
+
+            # Call weight service wrapper only if everything is valid
             if not error_message:
                 try:
                     sessions_info = get_truck_sessions(truck_id_raw, from_ts, to_ts)
                     truck_info = {
                         "id": truck_id_raw,
-                        "from": from_ts,  # API format, for debug / display
+                        "from": from_ts,  # API format, shown for debugging
                         "to": to_ts,
                         "tara": sessions_info.get("tara"),
                         "sessions": sessions_info.get("session_ids", []),
