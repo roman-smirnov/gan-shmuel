@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 from flask import Response, request , jsonify
 from gitops import update_repo,verify_signature,change_to_project_root
-from deploy import deploy,test_deploy
+from deploy import deploy,test_deploy, test_shutdown
 import hmac, hashlib, os, json
 
 
@@ -60,8 +60,10 @@ def register_routes(app):
         # Run tests
         # Run tests for any branch
         if not test_deploy():
+            test_shutdown()
             return jsonify({"status": "tests failed"}), 400
-
+        test_shutdown()
+        
         # Deploy only if master
         if branch == "master":
             print("🚀 Master branch pushed — deploying...")

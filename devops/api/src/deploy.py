@@ -1,19 +1,32 @@
 import os
 import subprocess
-import os
-import subprocess
+
+RUN_SCRIPT = "run.sh"
+
+def test_shutdown():
+    if not os.path.isfile(RUN_SCRIPT):
+        print("Failed to shutdown test service group: run.sh not found")
+        return 
+    print("run.sh found — trying to shutdown test service group...")
+    try:
+        subprocess.run(["bash", RUN_SCRIPT, "down", "--test"], check=True)
+    except Exception as e:
+        print(f"Error when trying to shutdown test service group: {e}")
+        return
+    print("Successfuly shut down test service group.")
+    return
+
+
 
 def test_deploy():
     all_tests_passed = True
 
-    run_script = "run.sh"
-
     try:
-        if os.path.isfile(run_script):
+        if os.path.isfile(RUN_SCRIPT):
             print("run.sh found — starting TEST stack…")
 
             # Start test stack: build + test mode
-            subprocess.run(["bash", "run.sh", "-b", "-t"], check=True)
+            subprocess.run(["bash", "run.sh", "--build", "--test"], check=True)
 
             # --- BILLING TESTS ---
             print("Running billing tests…")

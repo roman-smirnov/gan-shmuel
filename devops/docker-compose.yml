@@ -1,5 +1,6 @@
 services:
   devops-app:
+    user: "${UID}:${GID}"
     build:
       context: ..
       dockerfile: devops/api/Dockerfile
@@ -13,3 +14,4 @@ services:
     volumes:
        - ${PROJECT_ROOT}:${PROJECT_ROOT}
        - /var/run/docker.sock:/var/run/docker.sock
+  
