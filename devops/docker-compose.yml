@@ -1,11 +1,14 @@
 services:
   devops-app:
+    env_file:
+      - .env
     build:
       context: ..
       dockerfile: devops/api/Dockerfile
     ports:
       - "${DEVOPS_PORT}:5000"
     environment:
+      - ENV=${ENV}
       - DEVOPS_PORT=${DEVOPS_PORT}
       - FLASK_ENV=development
       - PROJECT_ROOT=${PROJECT_ROOT}  

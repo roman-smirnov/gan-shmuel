@@ -166,16 +166,34 @@ set_mode_env() {
 
   case "$mode" in
     prod)
+      export ENV=prod
       export DEVOPS_PORT=8081
       export WEIGHT_PORT=8082
       export BILLING_PORT=8083
       export WEIGHT_MYSQL_PORT=3037
+
+      export DB_HOST=billing-db
+      export DB_USER=root
+      export DB_PASSWORD=password
+      export DB_NAME=billdb
+      export DB_PORT=3306
+
+      export WEIGHT_BASE_URL=http://weight-app:5000
       ;;
     test)
+      export ENV=test
       export DEVOPS_PORT=8084
       export WEIGHT_PORT=8085
       export BILLING_PORT=8086
       export WEIGHT_MYSQL_PORT=3456
+
+      export DB_HOST=billing-db
+      export DB_USER=root
+      export DB_PASSWORD=password
+      export DB_NAME=billdb
+      export DB_PORT=3306
+
+      export WEIGHT_BASE_URL=http://weight-app:5000
       ;;
     *)
       error "invalid mode: $mode"

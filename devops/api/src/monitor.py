@@ -2,15 +2,16 @@ import time
 import requests
 from datetime import datetime
 from emails import notify_service_down, notify_service_recovered
+import os
 
-#SERVICES = {
- #   "weighing": "http://localhost:8082/health",
-  #  "billing": "http://billing:8083/health",
-#}
+if os.getenv("ENV") != "prod":
+    print("Monitor disabled (ENV != prod)")
+    exit()
+
 
 SERVICES = {
-    "weighing": "http://weight-app:5000/health",
-    "billing": "http://billing-app:5000/health",
+    "weighing": "http://prod-weight-app-1:5000/health",
+    "billing": "http://prod-billing-app-1:5000/health",
 }
 
 CHECK_INTERVAL = 60  
@@ -59,13 +60,15 @@ def check_services():
 
         if up_now and not svc["up"]:
             downtime = int((datetime.now() - svc["down_since"]).total_seconds() / 60)
+            if svc["alert_sent"]:
+                 notify_service_recovered(name, downtime)
 
             svc["up"] = True
             svc["down_since"] = None
             svc["fail_count"] = 0
             svc["alert_sent"] = False  
 
-            notify_service_recovered(name, downtime)
+            
 
         if up_now:
             svc["fail_count"] = 0  
