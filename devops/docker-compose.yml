@@ -1,1 +1,20 @@
-
+services:
+  devops-app:
+    user: "${UID}:${GID}"
+    build:
+      context: ..
+      dockerfile: devops/api/Dockerfile
+    ports:
+      - "${DEVOPS_PORT}:5000"
+    environment:
+      - ENV=${ENV}
+      - DEVOPS_PORT=${DEVOPS_PORT}
+      - FLASK_ENV=development
+      - PROJECT_ROOT=${PROJECT_ROOT}  
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET} 
+      - EMAIL_SENDER=${EMAIL_SENDER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_DEVELOPERS=${EMAIL_DEVELOPERS}
+    volumes:
+       - ${PROJECT_ROOT}:${PROJECT_ROOT}
+       - /var/run/docker.sock:/var/run/docker.sock

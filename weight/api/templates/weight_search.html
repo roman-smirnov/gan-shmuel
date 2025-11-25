@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Search Weights{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('home') }}" class="btn btn-link px-0 mb-3">&larr; Back to dashboard</a>
+
+<h2 class="mb-3">Search Weights</h2>
+
+<form action="{{ url_for('get_weight') }}" method="get" class="row g-3">
+  <input type="hidden" name="ui" value="1">
+
+  <div class="col-md-4">
+    <label class="form-label">From (YYYYMMDDhhmmss)</label>
+    <input name="from" class="form-control" value="{{ request.args.get('from', '') }}">
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">To (YYYYMMDDhhmmss)</label>
+    <input name="to" class="form-control" value="{{ request.args.get('to', '') }}">
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">Direction</label>
+    <select name="filter" class="form-select">
+      <option value="" {% if request.args.get('filter','') == '' %}selected{% endif %}>Any</option>
+      <option value="in" {% if request.args.get('filter') == 'in' %}selected{% endif %}>In</option>
+      <option value="out" {% if request.args.get('filter') == 'out' %}selected{% endif %}>Out</option>
+    </select>
+  </div>
+
+  <div class="col-12">
+    <button class="btn btn-primary">Search</button>
+  </div>
+</form>
+
+{% if results is not none %}
+  <hr class="my-4">
+  {% if results %}
+    <h4>Results</h4>
+    <table class="table table-sm table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Direction</th>
+          <th>Truck</th>
+          <th>Bruto</th>
+          <th>Neto</th>
+          <th>Produce</th>
+          <th>Containers</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in results %}
+          <tr>
+            <td>{{ t.id }}</td>
+            <td>{{ t.direction }}</td>
+            <td>{{ t.truck }}</td>
+            <td>{{ t.bruto }}</td>
+            <td>{{ t.neto or "-" }}</td>
+            <td>{{ t.produce }}</td>
+            <td class="text-truncate" style="max-width: 200px;">{{ t.containers }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-muted">No transactions match this filter.</p>
+  {% endif %}
+{% endif %}
+{% endblock %}

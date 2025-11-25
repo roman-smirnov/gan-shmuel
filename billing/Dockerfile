@@ -13,6 +13,7 @@ COPY ./run.py .
 COPY ./app ./app
 COPY ./tests ./tests
 
+
 RUN mkdir -p /in
 EXPOSE 5000
 ENV DEBUG=true

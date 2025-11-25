@@ -1,1 +1,44 @@
 
+
+services:
+  weight-db:
+    image: mysql:9.0.1
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_TCP_PORT=${WEIGHT_MYSQL_PORT}
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db/weight_db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "${WEIGHT_MYSQL_PORT}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      timeout: 20s
+      retries: 10
+
+
+  weight-app:
+    build: .
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - WEIGHT_MYSQL_PORT=${WEIGHT_MYSQL_PORT}
+      - TEST_MODE=${TEST_MODE}
+    volumes:
+      - ./api/in:/app/in
+    depends_on:
+      weight-db:
+        condition: service_healthy
+    ports:
+      - "${WEIGHT_PORT}:5000"
+
+
+
+
+volumes:
+  db-data:

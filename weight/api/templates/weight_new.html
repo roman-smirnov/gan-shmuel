@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}New Weight{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('home') }}" class="btn btn-link px-0 mb-3">&larr; Back to dashboard</a>
+
+<h2 class="mb-3">New weight</h2>
+<p class="text-muted">
+  create a new weight transaction
+</p>
+
+<form action="{{ url_for('post_weight') }}" method="post" class="row g-3">
+  <input type="hidden" name="ui" value="1">
+
+  <div class="col-md-4">
+    <label class="form-label">licence plate</label>
+    <input name="truck" class="form-control" required>
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">Produce</label>
+    <input name="produce" class="form-control" required>
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">weight</label>
+    <input name="weight" type="number" class="form-control" required>
+  </div>
+    
+  <div class="col-md-4">
+    <label class="form-label"> unit</label>
+    <input name="unit" type="text" class="form-control" required>
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">Direction</label>
+    <select name="direction" class="form-select" required>
+      <option value="in">In</option>
+      <option value="out">Out</option>
+    </select>
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">Force update</label>
+    <select name="force" class="form-select">
+      <option value="">False</option>
+      <option value="True">True</option>
+    </select>
+  </div>
+
+
+  <div class="col-md-8">
+    <label class="form-label">Containers (comma separated)</label>
+    <input name="containers" class="form-control" placeholder="container1,container2,...">
+  </div>
+
+  <div class="col-12">
+    <button class="btn btn-success">Submit</button>
+  </div>
+</form>
+
+{% if result %}
+  <hr class="my-4">
+  <h4>Saved transaction</h4>
+  <ul class="list-group">
+    <li class="list-group-item"><strong>ID:</strong> {{ result.id }}</li>
+    <li class="list-group-item"><strong>Truck:</strong> {{ result.truck }}</li>
+    <li class="list-group-item"><strong>Bruto:</strong> {{ result.bruto }}</li>
+    {% if result.truckTara is defined %}
+    <li class="list-group-item"><strong>Truck Tara:</strong> {{ result.truckTara }}</li>
+    {% endif %}
+    {% if result.neto is defined %}
+    <li class="list-group-item"><strong>Neto:</strong> {{ result.neto }}</li>
+    {% endif %}
+  </ul>
+{% endif %}
+{% endblock %}
