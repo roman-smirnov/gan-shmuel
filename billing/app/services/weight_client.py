@@ -28,7 +28,7 @@ def get_weight_data(from_date, to_date, filter_type='in'):
     1. GET /weight - to get all sessions
     2. GET /session/<id> - to get truck for each session
     """
-    url = current_app.config['WEIGHT_SERVICE_URL']
+    url = current_app.config['WEIGHT_BASE_URL']
     
     try:
         # Step 1: Get all weighing sessions
