@@ -3,7 +3,7 @@ import smtplib
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path="../../../weight/.env")
+load_dotenv(dotenv_path="../.env")
 
 
 SENDER = os.getenv("EMAIL_SENDER")

@@ -3,9 +3,14 @@ import requests
 from datetime import datetime
 from emails import notify_service_down, notify_service_recovered
 
+#SERVICES = {
+ #   "weighing": "http://localhost:8082/health",
+  #  "billing": "http://billing:8083/health",
+#}
+
 SERVICES = {
-    "weighing": "http://weighing:8082/health",
-    "billing": "http://billing:8083/health",
+    "weighing": "http://weight-app:5000/health",
+    "billing": "http://billing-app:5000/health",
 }
 
 CHECK_INTERVAL = 60  

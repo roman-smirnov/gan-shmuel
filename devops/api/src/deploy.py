@@ -14,8 +14,6 @@ def clean_deploy():
     ], check=True)
 
 
-
-
 def update_compose_with_shared_network(
     compose_path,
     output_dir,
