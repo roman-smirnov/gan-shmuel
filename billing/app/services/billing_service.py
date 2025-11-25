@@ -2,7 +2,7 @@ from datetime import datetime
 from app.models.provider import get_provider
 from app.models.truck import get_trucks_by_provider
 from app.models.rate import get_rate
-from app.services.weight_client import get_weight_data, get_weight_data_mock
+from app.services.weight_client import get_weight_data
 
 def calculate_bill(provider_id, from_date=None, to_date=None):
     """
@@ -36,7 +36,7 @@ def calculate_bill(provider_id, from_date=None, to_date=None):
     # filter='in' gets only incoming (delivery) weights
     # weight_data = get_weight_data(from_date, to_date, filter_type='in')
 
-    weight_data = get_weight_data_mock(from_date, to_date, filter_type='in')
+    weight_data = get_weight_data(from_date, to_date, filter_type='in')
     
     
     # Filter for this provider's trucks only
