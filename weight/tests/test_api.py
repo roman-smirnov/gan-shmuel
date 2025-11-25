@@ -1,10 +1,11 @@
 import sys
 import os
-from datetime import datetime, timezone
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pytest
 from api.app import init_app, db, Transactions  # import the factory function
+
 
 @pytest.fixture
 def client():
@@ -21,7 +22,7 @@ def client():
 
     test_config = {
         "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-        "SQLALCHEMY_TRACK_MODIFICATIONS": False
+        "SQLALCHEMY_TRACK_MODIFICATIONS": False,
     }
     app = init_app(test_config)
     app.config["TESTING"] = True
@@ -37,6 +38,7 @@ def client():
     with app.test_client() as client:
         yield client
 
+
 @pytest.fixture
 def in_truck_payload():
     """Payload for a truck coming in"""
@@ -47,8 +49,10 @@ def in_truck_payload():
         "containers": "C1,C2",
         "weight": "2000",
         "unit": "kg",
-        "force": "False"
+        "force": "False",
     }
+
+
 @pytest.fixture
 def in_truck_update_payload():
     """Payload for a truck coming in"""
@@ -59,8 +63,10 @@ def in_truck_update_payload():
         "containers": "C1,C2",
         "weight": "1000",
         "unit": "kg",
-        "force": "True"
+        "force": "True",
     }
+
+
 @pytest.fixture
 def out_truck_payload():
     """Payload for a truck going out"""
@@ -71,8 +77,10 @@ def out_truck_payload():
         "containers": "C1,C2",
         "weight": "1200",
         "unit": "kg",
-        "force": "False"
+        "force": "False",
     }
+
+
 @pytest.fixture()
 def out_truck_update_payload():
     """Payload for a truck going out"""
@@ -83,16 +91,17 @@ def out_truck_update_payload():
         "containers": "C1,C2",
         "weight": "1000",
         "unit": "kg",
-        "force": "True"
+        "force": "True",
     }
+
 
 def test_health(client):
     response = client.get("/health")
     assert response.status_code == 200
     assert b"Service is running" in response.data
 
-def test_basic_post_weight(client, in_truck_payload):
 
+def test_basic_post_weight(client, in_truck_payload):
     response = client.post("/weight", data=in_truck_payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -100,17 +109,18 @@ def test_basic_post_weight(client, in_truck_payload):
     assert data["truck"] == in_truck_payload["truck"]
     assert data["bruto"] == int(in_truck_payload["weight"])
 
-def test_post_out_without_in(client, out_truck_payload):
 
+def test_post_out_without_in(client, out_truck_payload):
     response = client.post("/weight", data=out_truck_payload)
     assert response.status_code == 409
 
-def test_post_in_twice(client, in_truck_payload):
 
+def test_post_in_twice(client, in_truck_payload):
     first_response = client.post("/weight", data=in_truck_payload)
     assert first_response.status_code == 200
     second_response = client.post("/weight", data=in_truck_payload)
     assert second_response.status_code == 409
+
 
 def test_post_complete_direction_in_out(client, in_truck_payload, out_truck_payload):
     first_response = client.post("/weight", data=in_truck_payload)
@@ -118,19 +128,20 @@ def test_post_complete_direction_in_out(client, in_truck_payload, out_truck_payl
     second_response = client.post("/weight", data=out_truck_payload)
     assert second_response.status_code == 200
 
+
 def test_post_in_update_force(client, in_truck_payload, in_truck_update_payload):
     first_response = client.post("/weight", data=in_truck_payload)
     assert first_response.status_code == 200
     second_response = client.post("/weight", data=in_truck_update_payload)
     assert second_response.status_code == 200
 
-def test_post_out_update_force(client, in_truck_payload,out_truck_payload, out_truck_update_payload):
+
+def test_post_out_update_force(
+    client, in_truck_payload, out_truck_payload, out_truck_update_payload
+):
     first_response = client.post("/weight", data=in_truck_payload)
     assert first_response.status_code == 200
     second_response = client.post("/weight", data=out_truck_payload)
     assert second_response.status_code == 200
     third_response = client.post("/weight", data=out_truck_update_payload)
     assert third_response.status_code == 200
-
-
-

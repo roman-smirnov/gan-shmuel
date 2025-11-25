@@ -1,6 +1,6 @@
 import secrets
-from datetime import datetime 
-from flask import session, abort
+from datetime import datetime
+from flask import session, abort, request
 
 
 # dependencies to be injected from app.py
@@ -19,23 +19,29 @@ def calc_containers_weight(containers):
 
     total_weight = 0
 
-    if not containers: #check if there are no containers
+    if not containers:  # check if there are no containers
         return total_weight
     try:
-        id_list = containers.split(",") # creates a list of id from the containers
+        id_list = containers.split(",")  # creates a list of id from the containers
         results = (
             db.session.query(Containers_registered.weight, Containers_registered.unit)
             .filter(Containers_registered.container_id.in_(id_list))
             .all()
         )  # get list of tuples with all container weight
-        if len(results) < len(id_list): #check if less containers returned than the amount sent
+        if len(results) < len(
+            id_list
+        ):  # check if less containers returned than the amount sent
             return None
-        for value in results:  # loops on all list and convert the size into kg if needed
-            total_weight = total_weight + convert_to_kg(value[0],value[1])
-            #value[0] = container weight , value[1] = container unit
+        for (
+            value
+        ) in results:  # loops on all list and convert the size into kg if needed
+            total_weight = total_weight + convert_to_kg(value[0], value[1])
+            # value[0] = container weight , value[1] = container unit
         return total_weight
 
-    except Exception:  # except will raise in case the container wasn't found  and return na
+    except (
+        Exception
+    ):  # except will raise in case the container wasn't found  and return na
         return None
 
 
@@ -53,17 +59,22 @@ def calc_neto_fruit(bruto_weight, truckTara, containers):
 def convert_kg_to_lbs(kg_num):
     return int(round(float(kg_num) * 2.20))
 
+
 def convert_metric_ton_to_kg(ton_num):
     return int(ton_num * 1000)
+
 
 def convert_usa_ton_to_kg(ton_num):
     return int(round(float(ton_num) * 907.2))
 
+
 def convert_lbs_to_kg(lbs_num):
     return int(round(float(lbs_num) / 2.20))
 
+
 def convert_uk_long_ton_to_kg(uk_l_weight):
     return int(uk_l_weight * 1016)
+
 
 def convert_to_kg(weight, unit=""):
     # function receives a weight and unit size and convert it to kg
@@ -90,6 +101,7 @@ def convert_to_kg(weight, unit=""):
             return None
 
     return None
+
 
 # ---
 # query helper functions
@@ -167,3 +179,7 @@ def handle_session(new_row, direction, truck):
             session_id = last_row.session_id
             new_row.session_id = session_id
             session.pop(truck, None)
+
+
+def is_ui_mode():
+    return request.args.get("ui") == "1" or request.form.get("ui") == "1"
