@@ -117,7 +117,7 @@ def get_query_transactions(
     from_date=None,
     to_date=None,
     direction_filter=None,
-    item_filter=None,
+    container_filter=None,
     truck_filter=None,
 ):
     query = Transactions.query
@@ -127,8 +127,8 @@ def get_query_transactions(
         query = query.filter(Transactions.datetime <= to_date)
     if direction_filter in ["in", "out"]:
         query = query.filter(Transactions.direction == direction_filter)
-    if item_filter:
-        query = query.filter(Transactions.produce == item_filter)
+    if container_filter:
+        query = query.filter(Transactions.containers == container_filter)
     if truck_filter:
         query = query.filter(Transactions.truck == truck_filter)
     return query.all()
