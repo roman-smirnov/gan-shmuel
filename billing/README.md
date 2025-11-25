@@ -468,8 +468,3 @@ Tests use mocked Weight service responses to ensure:
 - ✅ Only provider's trucks are included
 - ✅ Error cases are handled properly
 
----
-
-## License
-
-Copyright © 2024 Gan Shmuel DevOps Team
