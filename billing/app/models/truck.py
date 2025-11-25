@@ -1,6 +1,7 @@
 from app.utils import get_db_connection
 from app.services.weight_client import get_item_from_weight
 
+
 def create_truck(truck_id, provider_id):
     """
     Register a new truck in the system.
