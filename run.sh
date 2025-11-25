@@ -166,6 +166,7 @@ set_mode_env() {
 
   case "$mode" in
     prod)
+      export ENV=prod
       export DEVOPS_PORT=8081
       export WEIGHT_PORT=8082
       export BILLING_PORT=8083
@@ -173,12 +174,12 @@ set_mode_env() {
       export GAN_SHMUEL_NETWORK="gan-shmuel-prod-net"
       ;;
     test)
+      export ENV=test
       export DEVOPS_PORT=8084
       export WEIGHT_PORT=8085
       export BILLING_PORT=8086
       export WEIGHT_MYSQL_PORT=3456
       export GAN_SHMUEL_NETWORK="gan-shmuel-test-net"
-
       ;;
     *)
       error "invalid mode: $mode"
