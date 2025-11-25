@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime
-from app.models.truck import create_truck, update_truck, get_truck, get_truck_sessions
+from app.models.truck import create_truck, get_provider_by_truck, update_truck, get_truck, get_truck_sessions
 from app.models.provider import get_provider
 
 trucks_bp = Blueprint("trucks", __name__)
@@ -93,6 +93,11 @@ def update_truck_provider(truck_id):
     existing_truck = get_truck(truck_id)
     if not existing_truck:
         return jsonify({"error": "Truck not found"}), 404
+    
+    # Check if provided_id is the same as current provider_id
+    current_provider_id = get_provider_by_truck(truck_id)
+    if provider_id == current_provider_id:
+        return jsonify({"error": "The provider is already set to this value."}), 409
 
     # Check that provider exists
     provider = get_provider(provider_id)

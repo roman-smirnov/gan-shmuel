@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gan Shmuel: Rates</title>
+
+    <!-- Same styling as Providers UI -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: #ffffff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            font-size: 0.95rem;
+            color: #555;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        form {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #fafafa;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 6px;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #007bff;  /* blue button */
+            color: white;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #0056b3;  /* darker on hover */
+        }
+
+        .alert {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .alert.error {
+            background-color: #ffe5e5;
+            border: 1px solid #ff6b6b;
+            color: #b00000;
+        }
+
+        .alert.success {
+            background-color: #e6ffed;
+            border: 1px solid #47c366;
+            color: #216b3a;
+        }
+
+        .section {
+            margin-top: 20px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: -4px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Main title & subtitle (same style as Providers) -->
+    <h1>Gan Shmuel: Rates</h1>
+    <p class="page-subtitle">Upload and download Rates using Excel files.</p>
+
+    <!-- Messages: error or success -->
+    {% if error_message %}
+        <div class="alert error">
+            {{ error_message }}
+        </div>
+    {% endif %}
+
+    {% if success_message %}
+        <div class="alert success">
+            {{ success_message }}
+        </div>
+    {% endif %}
+
+    <!-- ======================== RATES – UPLOAD ======================== -->
+    <div class="section">
+        <h2>Rates – Upload</h2>
+        <p class="subtitle">
+            Choose an Excel file from your computer (placed into the /app/in folder in the container),
+            then the system will parse it and save the rates into the database.
+        </p>
+
+        <!-- POST /rates-ui (handled by rates_ui.py) -->
+        <form method="post" enctype="multipart/form-data">
+            <label for="rates_file">Select Excel file:</label>
+            <input
+                type="file"
+                id="rates_file"
+                name="rates_file"
+                accept=".xlsx"
+            >
+
+            <button type="submit">Upload Rates File</button>
+        </form>
+    </div>
+
+    <!-- ======================== RATES – DOWNLOAD ======================== -->
+    <div class="section">
+        <h2>Rates – Download</h2>
+        <p class="subtitle">
+            Download the current Rates from the database as an Excel file using the existing GET /rates endpoint.
+        </p>
+
+        <!-- GET /rates (API endpoint implemented in routes/rates.py) -->
+        <form method="get" action="/rates">
+            <button type="submit">Download Rates Excel</button>
+        </form>
+    </div>
+
+</div> <!-- end container -->
+
+</body>
+</html>
+
