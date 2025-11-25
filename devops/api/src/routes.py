@@ -25,11 +25,21 @@ def register_routes(app):
         data = request.get_json(silent=True)
         if not data:
             return jsonify({"error": "invalid json"}), 400
-        # 1. Repo owner email
-        repo_owner_email = data["repository"]["owner"]["email"]
+        repo_owner_email = (
+            data.get("repository", {})
+                .get("owner", {})
+                .get("email", "not-provided")
+        )
 
-        # 2. Pusher email (often GitHub noreply)
-        pusher_email = data["pusher"]["email"]
+        pusher_email = (
+            data.get("pusher", {})
+                .get("email", "not-provided")
+        )
+        author_email = (
+            data.get("head_commit", {})
+                .get("author", {})
+                .get("email")
+        )
 
         print(f"📧 Repo owner: {repo_owner_email}"
               f", Pusher: {pusher_email}")
