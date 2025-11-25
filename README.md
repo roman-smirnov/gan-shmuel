@@ -191,4 +191,5 @@ Show usage and exit:
 # or
 ./run.sh -h
 
-DUNE 4
+## Fix Git Problem on EC2
+git config --global --add safe.directory /home/ubuntu/gan-shmuel
