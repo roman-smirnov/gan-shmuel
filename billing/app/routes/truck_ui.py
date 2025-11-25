@@ -1,5 +1,3 @@
-# app/routes/truck_ui.py
-
 from flask import Blueprint, render_template, request
 from datetime import datetime
 
@@ -169,35 +167,40 @@ def truck_home():
                     error_message = "Truck not found."
 
             # Build timestamps for API (yyyymmddhhmmss)
+            from_ts = None
+            to_ts = None
+            from_dt = None
+            to_dt = None
+
             if not error_message:
                 now = datetime.now()
 
                 # --- Build "to" timestamp ---
                 if to_date_raw or to_time_raw:
-                    # If user filled something → require both date & time
-                    if not to_date_raw or not to_time_raw:
-                        error_message = (
-                            "Both 'To date' and 'To time' are required when one is filled."
-                        )
-                        to_ts = None
+                    # If user touched 'to' fields:
+                    if not to_date_raw:
+                        error_message = "To date is required when To time is provided."
                     else:
+                        # If time is missing but date is present → default to end of day 23:59
+                        if not to_time_raw:
+                            to_time_raw = "23:59"
                         to_ts = build_api_datetime(to_date_raw, to_time_raw)
                         if not to_ts:
                             error_message = "Invalid 'To' date/time format."
                 else:
-                    # User left 'to' empty → use now
+                    # User left 'to' empty → use 'now'
                     to_ts = now.strftime("%Y%m%d%H%M%S")
 
                 # --- Build "from" timestamp ---
                 if not error_message:
                     if from_date_raw or from_time_raw:
-                        # If user filled something → require both date & time
-                        if not from_date_raw or not from_time_raw:
-                            error_message = (
-                                "Both 'From date' and 'From time' are required when one is filled."
-                            )
-                            from_ts = None
+                        # If user touched 'from' fields:
+                        if not from_date_raw:
+                            error_message = "From date is required when From time is provided."
                         else:
+                            # If time is missing but date is present → default to start of day 00:00
+                            if not from_time_raw:
+                                from_time_raw = "00:00"
                             from_ts = build_api_datetime(from_date_raw, from_time_raw)
                             if not from_ts:
                                 error_message = "Invalid 'From' date/time format."
@@ -211,14 +214,16 @@ def truck_home():
             # Final safety check: correct length and numeric
             if not error_message:
                 if not (
-                    len(from_ts) == 14
+                    from_ts
+                    and to_ts
+                    and len(from_ts) == 14
                     and from_ts.isdigit()
                     and len(to_ts) == 14
                     and to_ts.isdigit()
                 ):
                     error_message = "Internal error: failed to build valid timestamps for API."
 
-            # NEW: Validate that 'to' is not earlier than 'from'
+            # Validate logical order: 'to' must be >= 'from'
             if not error_message:
                 try:
                     from_dt = datetime.strptime(from_ts, "%Y%m%d%H%M%S")
@@ -234,10 +239,17 @@ def truck_home():
             if not error_message:
                 try:
                     sessions_info = get_truck_sessions(truck_id_raw, from_ts, to_ts)
+
+                    # Build nice, human-readable date/time strings for the UI
+                    from_pretty = from_dt.strftime("%Y-%m-%d %H:%M") if from_dt else from_ts
+                    to_pretty = to_dt.strftime("%Y-%m-%d %H:%M") if to_dt else to_ts
+
                     truck_info = {
                         "id": truck_id_raw,
-                        "from": from_ts,  # API format, shown for debugging
-                        "to": to_ts,
+                        "from_api": from_ts,   # API format (hidden, for debugging if needed)
+                        "to_api": to_ts,
+                        "from_pretty": from_pretty,
+                        "to_pretty": to_pretty,
                         "tara": sessions_info.get("tara"),
                         "sessions": sessions_info.get("session_ids", []),
                     }

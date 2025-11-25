@@ -22,7 +22,7 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        h1, h2 {
+        h1, h2, h3, h4 {
             color: #333;
             margin-bottom: 10px;
         }
@@ -200,7 +200,7 @@
             If "From" / "To" are empty, defaults will be used (1st of month → now).
         </p>
 
-        <!-- Logical GET /truck/<id>?from=&to= -->
+        <!-- Logical GET /truck/<id>?from=&to= implemented via POST in UI -->
         <form method="post">
             <input type="hidden" name="form_type" value="truck_info">
 
@@ -249,8 +249,11 @@
             <div class="sessions-list">
                 <h3>Truck Info</h3>
                 <p><strong>ID:</strong> {{ truck_info.id }}</p>
-                <p><strong>From (API format):</strong> {{ truck_info.from }}</p>
-                <p><strong>To (API format):</strong> {{ truck_info.to }}</p>
+
+                <!-- User-friendly dates from Python (from_pretty / to_pretty) -->
+                <p><strong>From:</strong> {{ truck_info.from_pretty }}</p>
+                <p><strong>To:</strong> {{ truck_info.to_pretty }}</p>
+
                 <p><strong>Tara:</strong> {{ truck_info.tara }}</p>
 
                 <h4>Sessions:</h4>
