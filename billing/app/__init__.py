@@ -8,6 +8,7 @@ from .routes.provider_ui import ui_provider_bp
 from .routes.rates_ui import ui_rates_bp
 from .routes.bills import bills_bp
 from .routes.truck_ui import ui_truck_bp
+from .routes.bills_ui import ui_bills_bp
 
 def create_app():
     app = Flask(__name__)
@@ -21,6 +22,7 @@ def create_app():
     app.register_blueprint(ui_rates_bp)
     app.register_blueprint(bills_bp)
     app.register_blueprint(ui_truck_bp)
+    app.register_blueprint(ui_bills_bp)
 
     return app
 
