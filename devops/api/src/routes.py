@@ -4,6 +4,7 @@ from flask import Response, request , jsonify
 from gitops import update_repo,verify_signature,change_to_project_root
 from deploy import deploy,test_deploy,test_shutdown
 import hmac, hashlib, os, json
+from emails import send_email
 
 
 def register_routes(app):
@@ -37,8 +38,9 @@ def register_routes(app):
         author_email = (
             data.get("head_commit", {})
                 .get("author", {})
-                .get("email")
+                .get("email", "")
         )
+
 
         print(f"📧 Repo owner: {repo_owner_email}"
               f", Pusher: {pusher_email}")
@@ -69,16 +71,25 @@ def register_routes(app):
         # Run tests
         # Run tests for any branch
         if not test_deploy():
+            if author_email:
+                send_email("TEST FAILED", "",[author_email])
             test_shutdown()
             return jsonify({"status": "tests failed"}), 400
+        
         test_shutdown()
+        if author_email:
+            send_email("TEST PASSED", "",[author_email])
         
         # Deploy only if master
         if branch == "master":
             print("🚀 Master branch pushed — deploying...")
             if deploy():
+                if author_email:
+                    send_email("DEPLOYED TO PRODUCTION", "",[author_email])
                 return jsonify({"status": "deployed"}), 200
             else:
+                if author_email:
+                    send_email("DEPLOYED TO PRODUCTION FAILED", "",[author_email])
                 return jsonify({"status": "deploy failed"}), 500
         else:
             print("ℹ️ Development branch pushed — tests passed but no deployment.")
