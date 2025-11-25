@@ -58,21 +58,18 @@ def test_get_transaction_yesterday(client, in_truck_payload):
     assert len(data["results"]) == 0
 
 
-def test_get_transaction_today(client, in_truck_payload):
+def test_get_transaction_today(client, in_truck_payload, ):
     client.post("/weight", data=in_truck_payload)
-    start_of_the_day = (
-        datetime.now()
-        .replace(hour=0, minute=0, second=0, microsecond=0)
-        .strftime("%Y%m%d%H%M%S")
-    )
-    end_of_the_day = (
-        datetime.now()
-        .replace(hour=23, minute=59, second=59, microsecond=999999)
-        .strftime("%Y%m%d%H%M%S")
-    )
-    response = client.get(
-        "/weight", query_string={"from": start_of_the_day, "to": end_of_the_day}
-    )
+    response = client.get("/weight",query_string={"from": "20220101000000", "to": "20300101000000"})
     assert response.status_code == 200
     data = response.get_json()
-    assert len(data["results"]) == 1
+    [actual] = data["results"]
+    expected = {
+        "id": 1,
+        "direction": "in",
+        "bruto": 2000,
+        "neto": None,
+        "produce": "apples",
+        "containers": "C1,C2",
+    }
+    assert actual == expected

@@ -1,6 +1,7 @@
 import secrets
 from datetime import datetime
 from flask import session, abort, request
+from sqlalchemy import or_
 
 
 # dependencies to be injected from app.py
@@ -131,7 +132,14 @@ def get_query_transactions(
     if direction_filter in ["in", "out"]:
         query = query.filter(Transactions.direction == direction_filter)
     if container_filter:
-        query = query.filter(Transactions.containers == container_filter)
+        query = query.filter(
+            or_(
+                Transactions.containers == container_filter,
+                Transactions.containers.like(f"{container_filter},%"),
+                Transactions.containers.like(f"%,{container_filter}"),
+                Transactions.containers.like(f"%,{container_filter},%"),
+            )
+        )
     if truck_filter:
         query = query.filter(Transactions.truck == truck_filter)
     return query.all()

@@ -1,11 +1,12 @@
 import os
 import sys
 import pytest
+from datetime import datetime
 
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from api.app import init_app, db as _db
-
+DATE_FMT = "%Y%m%d%H%M%S"
 # Environment variable to switch between sqlite and mysql for tests
 TEST_MODE = os.getenv("TEST_MODE")
 
@@ -147,3 +148,23 @@ def truck_no_containers_payload_out():
         "unit": "kg",
         "force": "False",
     }
+
+
+@pytest.fixture()
+def container1():
+    return {
+        "name": "C1",
+        "tara": "100",
+        "unit": "kg",
+    }
+
+
+@pytest.fixture()
+def container2():
+    return {
+        "name": "C2",
+        "tara": "150",
+        "unit": "kg",
+    }
+
+
