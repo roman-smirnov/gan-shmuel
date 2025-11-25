@@ -4,7 +4,7 @@ from flask import Response, request , jsonify
 from gitops import update_repo,verify_signature,change_to_project_root
 from deploy import deploy,test_deploy,test_shutdown
 import hmac, hashlib, os, json
-from emails import send_email
+from emails import send_email,notify_devops_deployment
 
 
 def register_routes(app):
@@ -86,10 +86,12 @@ def register_routes(app):
             if deploy():
                 if author_email:
                     send_email("DEPLOYED TO PRODUCTION", "",[author_email])
+                notify_devops_deployment("Deployment to production SUCCESS")
                 return jsonify({"status": "deployed"}), 200
             else:
                 if author_email:
                     send_email("DEPLOYED TO PRODUCTION FAILED", "",[author_email])
+                notify_devops_deployment("Deployment to production FAILED")
                 return jsonify({"status": "deploy failed"}), 500
         else:
             print("ℹ️ Development branch pushed — tests passed but no deployment.")

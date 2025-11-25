@@ -9,8 +9,10 @@ load_dotenv(dotenv_path="../../.env")
 SENDER = os.getenv("EMAIL_SENDER")
 PASSWORD = os.getenv("EMAIL_PASSWORD")
 DEVELOPERS_RAW = os.getenv("EMAIL_DEVELOPERS", "")
+DEVOPS_RAW = os.getenv("EMAIL_DEVOPS_DEVELOPERS", "")
 
 
+DEVOPS_DEVELOPERS = [email.strip() for email in DEVOPS_RAW.split(",") if email.strip()]
 DEVELOPERS = [email.strip() for email in DEVELOPERS_RAW.split(",") if email.strip()]
 
 SMTP_SERVER = "smtp.gmail.com"
@@ -77,3 +79,11 @@ def notify_service_recovered(service_name, downtime_minutes):
         body=body,
         recipients=DEVELOPERS
     )
+
+def notify_devops_deployment(status_msg):
+    return send_email(
+        subject="DEPLOYMENT STATUS",
+        body=status_msg,
+        recipients=DEVOPS_DEVELOPERS
+    )
+
