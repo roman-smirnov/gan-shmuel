@@ -145,3 +145,5 @@ def test_post_out_update_force(
     assert second_response.status_code == 200
     third_response = client.post("/weight", data=out_truck_update_payload)
     assert third_response.status_code == 200
+
+

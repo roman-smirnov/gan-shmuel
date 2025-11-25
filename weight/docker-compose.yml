@@ -28,6 +28,7 @@ services:
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - WEIGHT_MYSQL_PORT=${WEIGHT_MYSQL_PORT}
+      - TEST_MODE=${TEST_MODE}
     volumes:
       - ./api/in:/app/in
     depends_on:
