@@ -96,18 +96,16 @@ def init_app(test_config=None):
         new_row.bruto = int(data.get("weight"))
         new_row.bruto = utils.convert_to_kg(new_row.bruto, unit)
         utils.handle_session(
-            new_row, new_row.direction, data["truck"]
+            new_row, new_row.direction, new_row.truck
         )  # handle the sessions
         if last_row:  # check if the last row exist
-            if last_row.direction == "in" and new_row.direction == "out":
-                # handle the situation truck -> in -> out
+            if (last_row.direction == "in" or not last_row.direction) and new_row.direction == "out":
+                # handle the situation truck -> in\ null -> out
                 containers_weight = utils.calc_containers_weight(new_row.containers)
                 if containers_weight or len(new_row.containers) == 0:
-                    new_row.truckTara = new_row.bruto - utils.calc_containers_weight(
-                        new_row.containers
-                    )
+                    new_row.truckTara = utils.calc_truck_tara(new_row)
                     neto = utils.calc_neto_fruit(
-                        int(last_row.bruto), new_row.truckTara, new_row.containers
+                        int(last_row.bruto), new_row.truckTara, last_row.containers
                     )
                     new_row.neto = neto
 
@@ -132,7 +130,7 @@ def init_app(test_config=None):
             # handle situation that a truck that isn't in trying to leave
             abort(
                 409,
-                description=f"truck isn't in {new_row.direction} use force=True to update",
+                description="truck isn't in use force=True to update",
             )
 
         db.session.add(new_row)
