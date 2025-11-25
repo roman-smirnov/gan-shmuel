@@ -73,7 +73,7 @@ def deploy():
     print("Deploying PRODUCTION stack…")
 
     try:
-        subprocess.run(["bash", "run.sh", "-b", "-p"], check=True)
+        subprocess.run(["bash", "run.sh", "-b", "-p", "--master"], check=True)
         print("Production deployment finished successfully!")
         return True
     except subprocess.CalledProcessError:
