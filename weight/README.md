@@ -102,7 +102,7 @@ Returns:
   "tara": "<int or \"na\">",
   "sessions": ["s1", "s2", "..."]
 }
-```
+
 GET /session/<id>
 {
   "id": "<str>",
@@ -111,6 +111,7 @@ GET /session/<id>
   "truckTara": <int>, // OUT only
   "neto": <int or 'na'>
 }
+```
 +----------------------------+
 |      Weight API (Flask)    |
 +--------------+-------------+
