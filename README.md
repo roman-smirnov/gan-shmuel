@@ -21,7 +21,13 @@ You **must** choose exactly one mode: `--prod` or `--test`.
 | `-b`, `--build` | Rebuild images before starting (`--build`)       |
 | `-h`, `--help`  | Show usage and exit                              |
 
----
+
+### Down a Group of Services 
+```
+docker compose -p prod down -v
+docker compose -p test down -v
+```
+
 
 ### 🌐 What the script actually does
 
@@ -135,3 +141,4 @@ Show usage and exit:
 # or
 ./run.sh -h
 ```
+
