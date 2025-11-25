@@ -92,11 +92,8 @@ def init_app(test_config=None):
         new_row.neto = None
         force = data.get("force")
         unit = data.get("unit")
-        if unit == "kg":
-            new_row.bruto = int(data.get("weight"))
-        else:
-            new_row.bruto = utils.convert_lbs_to_kg(data.get("weight"))
-
+        new_row.bruto = int(data.get("weight"))
+        new_row.bruto = utils.convert_to_kg(new_row.bruto, unit)
         utils.handle_session(new_row, new_row.direction, data["truck"])  # handle the sessions
         if last_row:  # check if the last row exist
 
