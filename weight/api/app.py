@@ -5,8 +5,7 @@ import secrets
 import os
 import sys
 import json
-import utils
-
+from . import utils
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
