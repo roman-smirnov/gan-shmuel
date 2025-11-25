@@ -57,6 +57,25 @@ def get_truck(truck_id):
     return truck
 
 
+def get_provider_by_truck(truck_id):
+    """
+    Get all trucks belonging to a provider.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute(
+        "SELECT provider_id FROM Trucks WHERE id = %s",
+        (truck_id,)
+    )
+    result = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
+    
+    return result[0]
+
+
 def get_trucks_by_provider(provider_id):
     """
     Get all trucks belonging to a provider.
