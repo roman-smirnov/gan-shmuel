@@ -2,6 +2,7 @@ import requests
 from flask import current_app
 
 
+
 def get_item_from_weight(truck_id, from_date, to_date):
     """
     Call Weight service: GET /item/<id>?from=t1&to=t2
@@ -96,3 +97,4 @@ def get_weight_data(from_date, to_date, filter_type='in'):
         raise ConnectionError("Weight service timed out")
     except requests.exceptions.HTTPError as e:
         raise Exception(f"Weight service error: {e.response.status_code}")
+

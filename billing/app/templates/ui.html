@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gan Shmuel: Provider</title>
+
+    <!-- Basic styling for layout and appearance -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: #ffffff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            font-size: 0.95rem;  /* smaller text under main title */
+            color: #555;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        form {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #fafafa;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box; /* ensures padding doesn't break layout */
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #007bff;  /* blue button */
+            color: white;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #0056b3;  /* darker on hover */
+        }
+
+        .alert {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        /* Error message (red box) */
+        .alert.error {
+            background-color: #ffe5e5;
+            border: 1px solid #ff6b6b;
+            color: #b00000;
+        }
+
+        /* Success message (green box) */
+        .alert.success {
+            background-color: #e6ffed;
+            border: 1px solid #47c366;
+            color: #216b3a;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background-color: white;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        .section {
+            margin-top: 20px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: -4px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Main container of the page -->
+<div class="container">
+
+    <!-- Main title & subtitle -->
+    <h1>Gan Shmuel: Provider</h1>
+    <p class="page-subtitle">Simple management for Providers </p>
+
+    <!-- Messages: error or success -->
+    {% if error_message %}
+        <div class="alert error">
+            {{ error_message }}
+        </div>
+    {% endif %}
+
+    {% if success_message %}
+        <div class="alert success">
+            {{ success_message }}
+        </div>
+    {% endif %}
+
+    <!-- ======================== PROVIDERS – CREATE ======================== -->
+    <div class="section">
+        <h2>Providers – Create</h2>
+        <p class="subtitle">Create a new provider by name.</p>
+
+        <!-- POST request -->
+        <form method="post">
+            <!-- Used by UI to identify which form was submitted -->
+            <input type="hidden" name="form_type" value="provider">
+
+            <!-- Provider name input -->
+            <label for="create_name">Provider name:</label>
+            <input type="text" id="create_name" name="name" placeholder="Enter provider name">
+
+            <button type="submit">Create</button>
+        </form>
+    </div>
+
+    <!-- ======================== PROVIDERS – UPDATE ======================== -->
+    <div class="section">
+        <h2>Providers – Update</h2>
+        <p class="subtitle">Select an existing provider and update its name.</p>
+
+        <!-- PUT (logical) request -->
+        <form method="post">
+            <!-- This tells UI logic to handle this as UPDATE -->
+            <input type="hidden" name="form_type" value="provider_update">
+
+            <!-- Select provider to update -->
+            <label for="provider_id">Choose provider to update:</label>
+            <select name="provider_id" id="provider_id">
+                {% for p in providers %}
+                    <!-- Show provider ID & name -->
+                    <option value="{{ p.id }}">{{ p.id }} - {{ p.name }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- New name input -->
+            <label for="update_name">New provider name:</label>
+            <input type="text" id="update_name" name="name" placeholder="Enter new provider name">
+
+            <button type="submit">Update</button>
+        </form>
+    </div>
+
+    <!-- ======================== PROVIDERS – LIST / TABLE ======================== -->
+    <div class="section">
+        <h2>Providers – List</h2>
+        <p class="subtitle">All providers currently in the system.</p>
+
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% if providers %}
+                {% for p in providers %}
+                    <tr>
+                        <td>{{ p.id }}</td>
+                        <td>{{ p.name }}</td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <!-- Message shown if DB is empty -->
+                <tr>
+                    <td colspan="2">No providers found.</td>
+                </tr>
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Future sections: Rates / Trucks can be added below -->
+
+</div> <!-- end container -->
+</body>
+</html>
+
