@@ -1,6 +1,7 @@
 import secrets
 from datetime import datetime
 from flask import session, abort, request
+from sqlalchemy import or_
 
 
 # dependencies to be injected from app.py
@@ -49,10 +50,13 @@ def calc_neto_fruit(bruto_weight, truckTara, containers):
     # this functions receives a bruto weight, truck tara and a list(string separated by ",") of containers
     # and returns the neto weight by the following calculation neto = brutu - truck tara - containers_tara
     container_weight = calc_containers_weight(containers)
-    if container_weight or len(containers) == 0:
-        return bruto_weight - (int(truckTara) + container_weight)
+    try:
+        if container_weight or len(containers) == 0:
+            return bruto_weight - (int(truckTara) + container_weight)
 
-    else:
+        else:
+            return None
+    except TypeError:
         return None
 
 
@@ -128,7 +132,14 @@ def get_query_transactions(
     if direction_filter in ["in", "out"]:
         query = query.filter(Transactions.direction == direction_filter)
     if container_filter:
-        query = query.filter(Transactions.containers == container_filter)
+        query = query.filter(
+            or_(
+                Transactions.containers == container_filter,
+                Transactions.containers.like(f"{container_filter},%"),
+                Transactions.containers.like(f"%,{container_filter}"),
+                Transactions.containers.like(f"%,{container_filter},%"),
+            )
+        )
     if truck_filter:
         query = query.filter(Transactions.truck == truck_filter)
     return query.all()
@@ -143,6 +154,22 @@ def update_row(old_row, new_row):
     old_row.containers = new_row.containers
     old_row.truck = new_row.truck
     old_row.produce = new_row.produce
+    old_row.truckTara = None
+    old_row.neto = None
+    if new_row.direction == "out":
+        old_row.truckTara = calc_truck_tara(new_row)
+        last_in = None
+        rows = get_query_transactions(
+            None, None, None, None, new_row.truck
+        )  # get the last in transaction of the truck
+        if len(rows) > 1:  # need to find the position of the last in
+            last_in = rows[
+                -2
+            ]  # [-1] - is the last out since its update, [-2] is the last in
+        neto = calc_neto_fruit(
+            int(last_in.bruto), old_row.truckTara, last_in.containers
+        )
+        old_row.neto = neto
     db.session.commit()
 
     return 1
@@ -164,13 +191,7 @@ def verbose(row):
 
 
 def handle_session(new_row, direction, truck):
-    if direction == "in" or direction == "none":
-        # generate session
-        rand_num = secrets.randbelow(2000000000)  # creates a random number for the
-        session[truck] = rand_num
-        new_row.session_id = rand_num
-
-    elif direction == "out":
+    if direction == "out":
         rows = get_query_transactions(
             None, None, None, None, truck
         )  # get the last transaction of the truck
@@ -179,6 +200,23 @@ def handle_session(new_row, direction, truck):
             session_id = last_row.session_id
             new_row.session_id = session_id
             session.pop(truck, None)
+
+    elif direction == "in" or direction == "none" or not direction:
+        # generate session
+        rand_num = secrets.randbelow(2000000000)  # creates a random number for the
+        session[truck] = rand_num
+        new_row.session_id = rand_num
+
+
+def calc_truck_tara(transaction):
+    truck_tara = None
+    if transaction.bruto:
+        containers_weight = calc_containers_weight(transaction.containers)
+        if containers_weight or len(transaction.containers) == 0:
+            truck_tara = transaction.bruto - calc_containers_weight(
+                transaction.containers
+            )
+    return truck_tara
 
 
 def is_ui_mode():
