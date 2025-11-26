@@ -317,10 +317,10 @@ def test_get_truck_success_with_weight_service(client, mocker):
     
     # Mock weight service
     mock_get_item = mocker.patch('app.models.truck.get_item_from_weight')
-    mock_get_item.return_value = {
-        'tara': 5000,
-        'sessions': [101, 102]
-    }
+    mock_get_item.return_value = [
+        {"id": 1, "tara": 5000, "session_id": 101},
+        {"id": 2, "tara": 5000, "session_id": 102}
+    ]
     
     response = client.get('/truck/TRK-101?from=20251101000000&to=20251123120000')
     
@@ -347,10 +347,9 @@ def test_get_truck_success_with_default_dates(client, mocker):
     
     # Mock weight service
     mock_get_item = mocker.patch('app.models.truck.get_item_from_weight')
-    mock_get_item.return_value = {
-        'tara': 4500,
-        'sessions': [201]
-    }
+    mock_get_item.return_value = [
+        {"id": 1, "tara": 4500, "session_id": 201}
+    ]
     
     response = client.get('/truck/TRK-101')
     
@@ -496,10 +495,9 @@ def test_get_truck_weight_service_empty_sessions(client, mocker):
     
     # Mock weight service
     mock_get_item = mocker.patch('app.models.truck.get_item_from_weight')
-    mock_get_item.return_value = {
-        'tara': 5000,
-        'sessions': []
-    }
+    mock_get_item.return_value = [
+        {"id": 1, "tara": 5000, "session_id": None}
+    ]
     
     response = client.get('/truck/TRK-101?from=20251101000000&to=20251123120000')
     
