@@ -96,18 +96,18 @@ def init_app(test_config=None):
         new_row.bruto = int(data.get("weight"))
         new_row.bruto = utils.convert_to_kg(new_row.bruto, unit)
         utils.handle_session(
-            new_row, new_row.direction, data["truck"]
+            new_row, new_row.direction, new_row.truck
         )  # handle the sessions
         if last_row:  # check if the last row exist
-            if last_row.direction == "in" and new_row.direction == "out":
-                # handle the situation truck -> in -> out
+            if (
+                last_row.direction == "in" or not last_row.direction
+            ) and new_row.direction == "out":
+                # handle the situation truck -> in\ null -> out
                 containers_weight = utils.calc_containers_weight(new_row.containers)
                 if containers_weight or len(new_row.containers) == 0:
-                    new_row.truckTara = new_row.bruto - utils.calc_containers_weight(
-                        new_row.containers
-                    )
+                    new_row.truckTara = utils.calc_truck_tara(new_row)
                     neto = utils.calc_neto_fruit(
-                        int(last_row.bruto), new_row.truckTara, new_row.containers
+                        int(last_row.bruto), new_row.truckTara, last_row.containers
                     )
                     new_row.neto = neto
 
@@ -132,7 +132,7 @@ def init_app(test_config=None):
             # handle situation that a truck that isn't in trying to leave
             abort(
                 409,
-                description=f"truck isn't in {new_row.direction} use force=True to update",
+                description="truck isn't in use force=True to update",
             )
 
         db.session.add(new_row)
@@ -150,9 +150,9 @@ def init_app(test_config=None):
         raw_to = request.args.get("to")
 
         # Check if container or truck exists
-        if not utils.get_query_transactions(None, None, None, item_id, None) and not utils.get_query_transactions(
-            None, None, None, None, item_id
-        ):
+        if not utils.get_query_transactions(
+            None, None, None, item_id, None
+        ) and not utils.get_query_transactions(None, None, None, None, item_id):
             if utils.is_ui_mode():
                 return render_template(
                     "item.html",
@@ -232,7 +232,7 @@ def init_app(test_config=None):
                     Containers_registered(
                         container_id=entry["id"],
                         weight=entry["weight"],
-                            unit=entry["unit"],
+                        unit=entry["unit"],
                     )
                 )
 
@@ -255,17 +255,15 @@ def init_app(test_config=None):
         out_row = next((r for r in rows if r.direction == "out"), None)
 
         if out_row:
-            return jsonify(
-                {
-                    "id": str(out_row.id),
-                    "truck": out_row.truck if out_row.truck else "na",
-                    "bruto": out_row.bruto,
-                    "truckTara": out_row.truckTara
-                    if out_row.truckTara is not None
-                    else "na",
-                    "neto": out_row.neto if out_row.neto is not None else "na",
-                }
-            ), 200
+            result = {
+                "id": str(out_row.session_id),
+                "truck": out_row.truck if out_row.truck else "na",
+                "bruto": out_row.bruto,
+                "truckTara": out_row.truckTara
+                if out_row.truckTara is not None
+                else "na",
+                "neto": out_row.neto if out_row.neto is not None else "na",
+            }
         else:
             in_row = rows[0]
             result = {
@@ -276,7 +274,7 @@ def init_app(test_config=None):
 
         if utils.is_ui_mode():
             return render_template(
-                "session_details.html", session=out_row or rows[0], error=None
+                "session.html", sessions=rows
             )
 
         return jsonify(result), 200
@@ -325,7 +323,6 @@ def init_app(test_config=None):
     @app.route("/ui/session", methods=["GET"])
     def weighting_session():
         session_id = request.args.get("session_id")
-        truck = request.args.get("truck")
 
         sessions = None
 
@@ -334,13 +331,6 @@ def init_app(test_config=None):
             sessions = Transactions.query.filter(
                 Transactions.session_id == session_id
             ).all()
-        elif truck:
-            # Search by truck
-            sessions = (
-                Transactions.query.filter(Transactions.truck == truck)
-                .order_by(Transactions.datetime.desc())
-                .all()
-            )
 
         return render_template("session.html", sessions=sessions)
 
