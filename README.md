@@ -193,4 +193,3 @@ Show usage and exit:
 
 ## Fix Git Problem on EC2
 git config --global --add safe.directory /home/ubuntu/gan-shmuel
-
